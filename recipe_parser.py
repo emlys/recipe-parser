@@ -8,7 +8,6 @@ from fractions import Fraction
 from lxml import html
 
 from ingredient import Ingredient
-from instruction import Instructions
 from recipe import Recipe
 
 
@@ -27,7 +26,7 @@ class RecipeParser:
 
 	def parse_wordpress_recipe(self):
 		ingredient_tags = self.soup.find_all('li', class_='wprm-recipe-ingredient')
-		instruction_tags = self.soup.find_all('li', class_='wprm-recipe-instruction')
+		instruction_tags = self.soup.find_all('div', class_='wprm-recipe-instruction-text')
 
 		ingredients, instructions = [], []
 
@@ -41,13 +40,9 @@ class RecipeParser:
 
 			ingredients.append(Ingredient(amount, unit, name, notes, self.ureg, self.nlp))
 
+		instructions = ' '.join([i.get_text() for i in instruction_tags])
 
-		instructions = [i.find('div', class_='wprm-recipe-instruction-text').get_text() for i in instruction_tags]
-		instructions = ' '.join(instructions)
-		
-		instructions = Instructions(self.nlp(instructions), ingredients, self.nlp)	
-
-		r = Recipe(ingredients, instructions, self.ureg)
+		r = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
 		return r
 
