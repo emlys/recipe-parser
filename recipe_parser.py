@@ -89,8 +89,12 @@ class RecipeParser:
 
 
 if __name__ == '__main__':
+	print('Loading spacy package...')
 	nlp = spacy.load('en_core_web_lg')
-	r = RecipeParser('https://www.momontimeout.com/best-homemade-baked-mac-and-cheese-recipe/', pint.UnitRegistry(), nlp)
+	print('Loading pint unit registry...')
+	ureg = pint.UnitRegistry()
+
+	r = RecipeParser('https://www.momontimeout.com/best-homemade-baked-mac-and-cheese-recipe/', ureg, nlp)
 	
 	print(r.is_wordpress_recipe())
 	r.parse_wordpress_recipe()

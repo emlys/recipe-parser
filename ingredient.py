@@ -1,3 +1,7 @@
+"""
+Represent an ingredient in a recipe.
+"""
+
 import pint
 import spacy
 
@@ -5,6 +9,18 @@ import spacy
 class Ingredient:
 
     def __init__(self, quantity, unit, name, notes, ureg, nlp):
+        """
+        Represent a recipe ingredient with its name and amount
+
+        quantity: string representing the unitless amount of the ingredient,
+            e.g. '16' or '1 1/2'
+        unit: string representing the unit of measurement of the ingredient,
+            e.g 'cups' or 'tbsp'
+        name: string describing the ingredient, e.g. 'macaroni pasta'
+        notes: string with additional information, e.g. 'shredded'
+        ureg: pint.UnitRegistry instance, must be shared across all Ingredients
+        nlp: spacy.Language object
+        """
         self.name = name
         self.notes = notes or ''
         self.ureg = ureg
@@ -33,10 +49,5 @@ class Ingredient:
         print(self.name, self.base)
         
 
-
-
-   
-
-
     def __str__(self):
-        return ' | '.join([str(self.quantity.magnitude), str(self.quantity.units), self.name, self.notes, str(self.percent)])
+        return self.name
