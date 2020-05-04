@@ -17,13 +17,10 @@ class Recipe:
         for ingr in self.ingredients:
             if ingr.quantity.check('[volume]'):
                 total += ingr.quantity
-        print(total)
 
         for ingr in self.ingredients:
             if ingr.quantity.check('[volume]'):
                 ingr.percent = (ingr.quantity.to('cup') / total).magnitude
-
-                print(ingr.quantity, ' / ', total, ' = ', ingr.percent)
 
 
 
@@ -45,19 +42,17 @@ class Recipe:
         panel.set_xlim(0, 1)
         panel.set_ylim(0, 1)
         # turn off tick marks and labels
-        # panel.tick_params(
-        #     bottom=False,
-        #     labelbottom=False,
-        #     left=False,
-        #     labelleft=False
-        # )
+        panel.tick_params(
+            bottom=False,
+            labelbottom=False,
+            left=False,
+            labelleft=False
+        )
 
         self.ingredients.sort(key=lambda x: x.percent, reverse=True)
 
         bottom = 0
         for i, ingr in enumerate(self.ingredients):
-            print(ingr)
-            print(bottom)
             rectangle = Rectangle(
                 [0, bottom], 
                 1,

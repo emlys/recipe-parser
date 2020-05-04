@@ -1,21 +1,24 @@
 import pint
 import re
 import requests
+import spacy
+
 from bs4 import BeautifulSoup
 from fractions import Fraction
 from lxml import html
 
 from ingredient import Ingredient
-from instruction import Instruction
+from instruction import Instructions
 from recipe import Recipe
 
 
 class RecipeParser:
 
-	def __init__(self, url, ureg):
+	def __init__(self, url, ureg, nlp):
 		page = requests.get(url)
 		self.soup = BeautifulSoup(page.text, 'lxml')
 		self.ureg = ureg
+		self.nlp = nlp
 
 	def is_wordpress_recipe(self):
 		if self.soup.find('wprm-recipe-ingredients-container') and self.soup.find('wprm-recipe-instructions-container'):
@@ -36,15 +39,16 @@ class RecipeParser:
 
 			amount, unit, name, notes = [attr.get_text() if attr else None for attr in [amount, unit, name, notes]]
 
-			ingredients.append(Ingredient(amount, unit, name, notes, self.ureg))
+			ingredients.append(Ingredient(amount, unit, name, notes, self.ureg, self.nlp))
 
-		for i in instruction_tags:
-			text = i.find('div', class_='wprm-recipe-instruction-text').get_text()
-			instructions.append(Instruction(text))
+
+		instructions = [i.find('div', class_='wprm-recipe-instruction-text').get_text() for i in instruction_tags]
+		instructions = ' '.join(instructions)
+		
+		instructions = Instructions(self.nlp(instructions), ingredients, self.nlp)	
 
 		r = Recipe(ingredients, instructions, self.ureg)
-		r.print()
-		r.plot_ingredients()
+
 		return r
 
 
@@ -90,7 +94,9 @@ class RecipeParser:
 
 
 if __name__ == '__main__':
-	r = RecipeParser('https://www.momontimeout.com/best-homemade-baked-mac-and-cheese-recipe/', pint.UnitRegistry())
+	nlp = spacy.load('en_core_web_lg')
+	r = RecipeParser('https://www.momontimeout.com/best-homemade-baked-mac-and-cheese-recipe/', pint.UnitRegistry(), nlp)
+	
 	print(r.is_wordpress_recipe())
 	r.parse_wordpress_recipe()
 
