@@ -38,6 +38,8 @@ class Recipe:
 
         self.normalize_ingredients()
 
+        self.ingredient_nodes = []
+
         # The graph is a list of nodes, 
         # each one being the root of a different connected component.
         # It is updated as the graph grows and connects.
@@ -51,7 +53,7 @@ class Recipe:
 
         self.containers = []
 
-        self.current_node = None
+        self.current_ref = None
 
         for sentence in self.nlp(instructions).sents:
             sent, = sentence.as_doc().sents
@@ -68,13 +70,14 @@ class Recipe:
             n = Node()
             n.ingredients.append(i)
             graph.append(n)
+            self.ingredient_nodes.append(n)
 
         return graph
 
     def parse_steps(self, sent):
 
         print(sent)
-        print('current node:', self.current_node)
+        print('current node:', self.current_ref)
         root = sent.root
         #displacy.serve(sent, style='dep')
         
@@ -83,19 +86,28 @@ class Recipe:
         if head.root.pos_ == 'VERB':
 
             action = head.root
-            objects = self.identify_objects(head.root)
-            print('objects:', objects)
+            ingredient_nodes, containers = self.identify_objects(head.root)
      
-            if not objects:
-                objects = [self.current_node]
-            node = Node(action, objects)
-            print('just created node', node)
-
-            if node.ingredients:
+            if ingredient_nodes:
+                node = Node(action, ingredient_nodes)
+                print('just created node', node)
                 self.graph.append(node)
-
                 self.order.append(node)
-            self.current_node = node
+                self.current_ref = node
+            elif containers:
+                pass
+                self.current_ref = containers[0]
+            else:
+                if isinstance(self.current_ref, Node):
+                    node = Node(action, [self.current_ref])
+                    print('just created node', node)
+                    self.graph.append(node)
+                    self.order.append(node)
+                    self.current_ref = node
+                else:
+                    pass
+
+            
 
         else:
             print('not a verb')
@@ -121,7 +133,7 @@ class Recipe:
             labelleft=False
         )
 
-        for i, ing in enumerate(self.ingredients):
+        for i, ing in enumerate(self.ingredient_nodes):
             plt.plot(
                 i,
                 len(self.order),
@@ -134,7 +146,7 @@ class Recipe:
             plt.text(
                 i,
                 len(self.order),
-                ' ' + ing.name,
+                ' ' + ing.ingredients[0].name,
                 verticalalignment='bottom',
                 rotation=60
             )
@@ -142,6 +154,8 @@ class Recipe:
             ing.y = len(self.order)
 
         for i, node in enumerate(self.order):
+
+            print('Node:', node, 'parents:', [p for p in node.parents])
 
             node.x = sum(p.x or 0 for p in node.parents) / len(node.parents)
             node.y = len(self.order) - 1 - i
@@ -193,15 +207,24 @@ class Recipe:
         dobjs = self.get_direct_objects(token)
 
         if len(dobjs) == 0:
-            return []
+            return [], []
         else:
             objs = [d for d in dobjs]
             for d in dobjs:
                 objs += self.get_conjuncts(d)
 
-        ids = [self.identify(obj) for obj in objs]
+        ings, conts = [], []
 
-        return ids
+        for obj in objs:
+            identity = self.identify(obj)
+            if isinstance(identity, Node):
+                ings.append(identity)
+            elif isinstance(identity, Container):
+                conts.append(identity)
+            else:
+                print(type(identity))
+
+        return ings, conts
 
 
     def identify(self, token):
@@ -210,11 +233,11 @@ class Recipe:
         if self.is_kitchen_equipment(token):
             for container in self.containers:
                 if token == container.name:
-                    return None
+                    return container
             else:
                 container = Container(token)
                 self.add_new_container(container)
-                return None
+                return container
 
         else:
             print(self.graph)

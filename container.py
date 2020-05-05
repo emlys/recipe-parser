@@ -11,6 +11,4 @@ class Container:
     def __init__(self, name):
         print('new Container:', name)
         self.name = name
-        self.node = Node()
-        self.node.container = self
                 
