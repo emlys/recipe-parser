@@ -5,6 +5,7 @@ import numpy as np
 import spacy
 from spacy import displacy
 
+from container import Container
 from node import Node
 
 
@@ -44,11 +45,20 @@ class Recipe:
         # at the time they are instantiated.
         self.graph = self.initialize_graph()
 
+        # This list of Nodes will store them in the order that they
+        # are parsed/happen in the instructions
+        self.order = []
+
+        self.containers = []
+
         self.current_node = None
 
         for sentence in self.nlp(instructions).sents:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
+
+        self.visualize()
+
 
     def initialize_graph(self):
         """Return a list of Nodes, one storing each Ingredient"""
@@ -64,8 +74,7 @@ class Recipe:
     def parse_steps(self, sent):
 
         print(sent)
-        print(sent.root)
-        print('current node:', self.current_node.ingredients if self.current_node else None)
+        print('current node:', self.current_node)
         root = sent.root
         #displacy.serve(sent, style='dep')
         
@@ -77,7 +86,15 @@ class Recipe:
             objects = self.identify_objects(head.root)
             print('objects:', objects)
      
+            if not objects:
+                objects = [self.current_node]
             node = Node(action, objects)
+            print('just created node', node)
+
+            if node.ingredients:
+                self.graph.append(node)
+
+                self.order.append(node)
             self.current_node = node
 
         else:
@@ -88,26 +105,92 @@ class Recipe:
                 self.parse_steps(tail)
 
 
+    def visualize(self):
+        plt.figure(figsize = (8, 8))
+
+        panel = plt.axes([0.1, 0.1, 0.7, 0.7])
+
+        panel.set_xlim(-1, len(self.ingredients))
+        panel.set_ylim(-1, len(self.order) + 1)
+
+        # turn off tick marks and labels
+        panel.tick_params(
+            bottom=False,
+            labelbottom=False,
+            left=False,
+            labelleft=False
+        )
+
+        for i, ing in enumerate(self.ingredients):
+            plt.plot(
+                i,
+                len(self.order),
+                marker='o',
+                markerfacecolor='green',
+                markeredgewidth=0,
+                markersize=8,
+                linewidth=0,
+            )
+            plt.text(
+                i,
+                len(self.order),
+                ' ' + ing.name,
+                verticalalignment='bottom',
+                rotation=60
+            )
+            ing.x = i
+            ing.y = len(self.order)
+
+        for i, node in enumerate(self.order):
+
+            node.x = sum(p.x or 0 for p in node.parents) / len(node.parents)
+            node.y = len(self.order) - 1 - i
+
+            plt.plot(
+                node.x,
+                node.y,
+                marker='o',
+                markerfacecolor='green',
+                markeredgewidth=0,
+                markersize=8,
+                linewidth=0,
+            )
+
+            plt.text(
+                node.x,
+                node.y,
+                ' ' + node.action.text
+            )
+
+            for parent in node.parents:
+                plt.plot(
+                    [parent.x, node.x],
+                    [parent.y, node.y],
+                    markersize=0,
+                    linewidth=2
+                )
+
+
+
+        plt.show()
+
+
     def get_conjuncts(self, token):
         """
         Return all child conjuncts of the token.
         This is different from the token.conjuncts attribute because this
         only includes conjuncts that are children of the token.
         """
-        print("get conjuncts")
         return [child for child in token.children if child.dep_ == 'conj']
 
     def get_direct_objects(self, token):
         """
         Return all direct objects of the token.
         """
-        print("get direct objects")
         return [child for child in token.children if child.dep_ == 'dobj']
 
     def identify_objects(self, token):
-        print("identify objects")
         dobjs = self.get_direct_objects(token)
-        print('direct objects:', dobjs)
 
         if len(dobjs) == 0:
             return []
@@ -116,25 +199,40 @@ class Recipe:
             for d in dobjs:
                 objs += self.get_conjuncts(d)
 
-        print(objs)
-        ids = [self.identify(obj) or Container(obj) for obj in objs]
+        ids = [self.identify(obj) for obj in objs]
 
         return ids
 
 
-
-
     def identify(self, token):
         print("identify", token)
-        print(self.graph)
-        print([node.max_base_similarity(token) for node in self.graph])
-        return max(self.graph, key=lambda node: node.max_base_similarity(token))
+
+        if self.is_kitchen_equipment(token):
+            for container in self.containers:
+                if token == container.name:
+                    return None
+            else:
+                container = Container(token)
+                self.add_new_container(container)
+                return None
+
+        else:
+            print(self.graph)
+            return max(self.graph, key=lambda node: node.max_base_similarity(token))
+
+    def add_new_container(self, container: Container):
+        self.containers.append(container)
+
+    def is_kitchen_equipment(self, token):
+        kitchen_equipment = ['oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan']
+        print('kitchen equipment?', token.text)
+        if token.text in kitchen_equipment:
+            return True
+        return False
 
 
     def get_objects(self, token):
-        print("get objects")
         
-
         head, tail = self.split_conjugates(token)
         objects = [head]
 
@@ -146,12 +244,8 @@ class Recipe:
         return objects
 
     def split_conjuncts(self, span):
-        print("splitting conjuncts")
-
-        print(span.root)
         # Get the first conjunct
         conjs = self.get_conjuncts(span.root)
-        print(conjs)
 
         if conjs:
             conj = conjs[0]

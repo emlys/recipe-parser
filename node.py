@@ -1,17 +1,23 @@
 class Node:
 
-    def __init__(self, action=None, children=None):
+    def __init__(self, action=None, parents=None):
 
         self.action = action
-        self.children = children or []
-        self.parent = None
+        self.parents = parents or []
+        self.children = []
         self.ingredients = []
+        self.container = None
+        self.x = None
+        self.y = None
 
-        for child in self.children:
-            child.parent = self
-            self.ingredients += child.ingredients
+        for parent in self.parents:
+            parent.children.append(self)
+            self.ingredients += parent.ingredients
 
-        print(self.action, [i.name for i in self.ingredients], '!')
+        if self.parents:
+            self.container = self.parents[0].container
+
+        print(self, '!')
 
 
     def max_base_similarity(self, token) -> float:
@@ -21,5 +27,7 @@ class Node:
         return max(token.similarity(i.span) for i in self.ingredients)
 
     def __repr__(self):
-        ing_names = [i.name for i in self.ingredients]
-        return '[ ' + ', '.join(ing_names) + ' ]'
+        ing_names = ','.join([i.name for i in self.ingredients])
+        cont_name = self.container.name.text if self.container else 'none'
+        action_name = self.action.text if self.action else 'none'
+        return 'Node{\n\taction: ' + action_name + '\n\tingredients:' + ing_names + '\n\tcontainer:' + cont_name + '\n}'
