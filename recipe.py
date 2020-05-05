@@ -86,36 +86,54 @@ class Recipe:
         if head.root.pos_ == 'VERB':
 
             action = head.root
-            ingredient_nodes, containers = self.identify_objects(head.root)
+            dobjs = self.get_direct_objects(head.root)
+            ingredient_nodes, containers = self.identify_objects(dobjs)
+            print(ingredient_nodes)
+            print(containers)
      
             if ingredient_nodes:
                 node = Node(action, ingredient_nodes)
                 print('just created node', node)
-                self.graph.append(node)
-                self.order.append(node)
-                self.current_ref = node
+                self.add_new_node(node)
             elif containers:
-                pass
                 self.current_ref = containers[0]
             else:
                 if isinstance(self.current_ref, Node):
                     node = Node(action, [self.current_ref])
                     print('just created node', node)
-                    self.graph.append(node)
-                    self.order.append(node)
-                    self.current_ref = node
-                else:
-                    pass
+                    self.add_new_node(node)
+                    
 
             
 
         else:
             print('not a verb')
+            print(head.text)
+
+            head = list(self.nlp(head.text + '.').sents)[0]
+            nouns = [n.root for n in head.noun_chunks]
+            print('nouns:', nouns)
+
+            ingredient_nodes, containers = self.identify_objects(nouns)
+            print('found', ingredient_nodes)
+            print(containers)
+
+            if ingredient_nodes:
+                node = Node(head, ingredient_nodes)
+                print('just created node', node)
+                self.add_new_node(node)
 
 
         if tail:
                 self.parse_steps(tail)
 
+    def add_new_node(self, node):
+        self.graph.append(node)
+        for parent in node.parents:
+            self.graph.remove(parent)
+
+        self.order.append(node)
+        self.current_ref = node
 
     def visualize(self):
         plt.figure(figsize = (8, 8))
@@ -203,18 +221,17 @@ class Recipe:
         """
         return [child for child in token.children if child.dep_ == 'dobj']
 
-    def identify_objects(self, token):
-        dobjs = self.get_direct_objects(token)
+    def identify_objects(self, dobjs):
 
         if len(dobjs) == 0:
             return [], []
         else:
             objs = [d for d in dobjs]
             for d in dobjs:
+                print(list(d.children))
                 objs += self.get_conjuncts(d)
 
         ings, conts = [], []
-
         for obj in objs:
             identity = self.identify(obj)
             if isinstance(identity, Node):
@@ -228,7 +245,6 @@ class Recipe:
 
 
     def identify(self, token):
-        print("identify", token)
 
         if self.is_kitchen_equipment(token):
             for container in self.containers:
@@ -240,7 +256,6 @@ class Recipe:
                 return container
 
         else:
-            print(self.graph)
             return max(self.graph, key=lambda node: node.max_base_similarity(token))
 
     def add_new_container(self, container: Container):
