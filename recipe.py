@@ -2,6 +2,7 @@ import pint
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
+import re
 import spacy
 from spacy import displacy
 
@@ -55,11 +56,16 @@ class Recipe:
 
         self.current_ref = None
 
+        for a, b in [('green bell pepper', 'green pepper'), ('extra virgin olive oil', 'olive oil'), ('oregano', 'oregano'), ('oregano', 'pepper')]:
+            print(self.is_substring(a, b))
+
+
         for sentence in self.nlp(instructions).sents:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
 
         self.visualize()
+
 
 
     def initialize_graph(self):
@@ -74,12 +80,25 @@ class Recipe:
 
         return graph
 
+
+    def is_substring(self, string, substring):
+        words = '.*'.join(substring.split(' '))
+        print(words)
+        pattern = re.compile(words)
+        match = re.search(pattern, string)
+        if match:
+            return True
+        else:
+            return False
+
+
+
     def parse_steps(self, sent):
 
         print(sent)
         print('current node:', self.current_ref)
         root = sent.root
-        #displacy.serve(sent, style='dep')
+        displacy.serve(sent, style='dep')
         
         head, tail = self.split_conjuncts(sent)
 
@@ -130,7 +149,10 @@ class Recipe:
     def add_new_node(self, node):
         self.graph.append(node)
         for parent in node.parents:
-            self.graph.remove(parent)
+            try:
+                self.graph.remove(parent)
+            except:
+                pass
 
         self.order.append(node)
         self.current_ref = node
@@ -207,12 +229,23 @@ class Recipe:
         plt.show()
 
 
-    def get_conjuncts(self, token):
+    def get_all_conjuncts(self, token):
+        conjs = []
+        current = self.get_shallow_conjuncts(token)
+        while current:
+            conjs += current
+            current = self.get_shallow_conjuncts(current[0])
+        return conjs
+
+
+
+    def get_shallow_conjuncts(self, token):
         """
-        Return all child conjuncts of the token.
+        Return all immediate child conjuncts of the token.
         This is different from the token.conjuncts attribute because this
         only includes conjuncts that are children of the token.
         """
+
         return [child for child in token.children if child.dep_ == 'conj']
 
     def get_direct_objects(self, token):
@@ -229,7 +262,7 @@ class Recipe:
             objs = [d for d in dobjs]
             for d in dobjs:
                 print(list(d.children))
-                objs += self.get_conjuncts(d)
+                objs += self.get_all_conjuncts(d)
 
         ings, conts = [], []
         for obj in objs:
@@ -283,7 +316,7 @@ class Recipe:
 
     def split_conjuncts(self, span):
         # Get the first conjunct
-        conjs = self.get_conjuncts(span.root)
+        conjs = self.get_shallow_conjuncts(span.root)
 
         if conjs:
             conj = conjs[0]
@@ -363,6 +396,4 @@ class Recipe:
 
         for i in self.instructions:
             print(i)
-
-
 

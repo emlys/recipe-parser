@@ -3,6 +3,7 @@ Represent an ingredient in a recipe.
 """
 
 import pint
+import re
 import spacy
 
 
@@ -26,8 +27,14 @@ class Ingredient:
         self.ureg = ureg
         self.nlp = nlp
 
-
+        
+        print(name, quantity, unit)
         if quantity and unit:
+            
+            # Sometimes recipes use fraction characters like '¼'
+            # To parse these we need to convert them to standard fractions like '1/4'
+            quantity = self.replace_unicode_fractions(quantity)
+
             self.quantity = ureg.parse_expression(' '.join([quantity, unit]))
         else:
             self.quantity = pint.Quantity(0)
@@ -48,6 +55,25 @@ class Ingredient:
 
         print(self.name, self.base)
         
+
+    def replace_unicode_fractions(self, quantity):
+        """Replace fraction characters with multi-character equivalents"""
+        unicode_fracs = {
+            '½': '1/2',
+            '⅓': '1/3',
+            '⅔': '2/3',
+            '¼': '1/4',
+            '¾': '3/4',
+            '⅛': '1/8',
+            '⅜': '3/8',
+            '⅝': '5/8',
+            '⅞': '7/8'
+        }
+
+        for char, replacement in unicode_fracs.items():
+            pattern = re.compile(char)
+            quantity = re.sub(pattern, replacement, quantity)
+        return quantity
 
     def __str__(self):
         return self.name
