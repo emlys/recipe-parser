@@ -94,9 +94,8 @@ if __name__ == '__main__':
 	print('Loading pint unit registry...')
 	ureg = pint.UnitRegistry()
 
-	r = RecipeParser('https://www.loveandlemons.com/salad-recipes/', ureg, nlp)
+	r = RecipeParser('https://www.noracooks.com/vegan-chocolate-cake/', ureg, nlp)
 	
-	print(r.is_wordpress_recipe())
 	r.parse_wordpress_recipe()
 
 

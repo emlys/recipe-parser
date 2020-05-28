@@ -30,30 +30,75 @@ class Ingredient:
         
         print(name, quantity, unit)
         if quantity and unit:
-            
-            # Sometimes recipes use fraction characters like '¼'
-            # To parse these we need to convert them to standard fractions like '1/4'
-            quantity = self.replace_unicode_fractions(quantity)
-
-            self.quantity = ureg.parse_expression(' '.join([quantity, unit]))
+            self.quantity = self.parse_quantity(quantity, unit)
+            print(quantity, self.quantity.magnitude)
         else:
             self.quantity = pint.Quantity(0)
 
-        self.percent = 0
+        # self.percent = 0
 
-        self.span = list(self.nlp(self.name).sents)[0]
+        # self.span = list(self.nlp(self.name).sents)[0]
 
-        for token in self.span:
-                print(token, token.pos_, token.tag_, token.dep_)
+        # for token in self.span:
+        #         print(token, token.pos_, token.tag_, token.dep_)
 
-        if self.span.root.pos_ == 'NOUN' or self.span.root.pos_ == 'PROPN':
-            self.base = self.span.root
+        # if self.span.root.pos_ == 'NOUN' or self.span.root.pos_ == 'PROPN':
+        #     self.base = self.span.root
+        # else:
+        #     for token in self.span:
+        #         print(token.dep_)
+        #     self.base = [token for token in self.span if token.dep_ == 'dobj'][0]
+
+        # print(self.name, self.base)
+
+
+    def parse_quantity(self, quantity: str, unit: str) -> pint.Quantity:
+
+        # Sometimes recipes use fraction characters like '¼'
+        # To parse these we need to convert them to standard fractions like '1/4'
+        quantity = self.replace_unicode_fractions(quantity)
+
+        # define some regular expressions to help identify numbers
+        integer = '\d+'
+        fraction = '{}/{}'.format(integer, integer)
+        mixed_fraction = '{} {}'.format(integer, fraction)
+        decimal = '{}\.{}'.format(integer, integer)
+        number = '|'.join([mixed_fraction, fraction, decimal, integer])
+
+        # two numbers separated by a dash, possibly with spaces
+        quantity_range = '({}) ?- ?({})'.format(number, number)
+
+        # check if the quantity is a range e.g. "1.5 - 2 cups flour"
+        pattern = re.compile(quantity_range)
+        match = pattern.match(quantity)
+
+        # if it is, take the middle value
+        if match:
+            low_bound = self.check_for_mixed_fraction(match.group(1), unit)
+            high_bound = self.check_for_mixed_fraction(match.group(2), unit)
+            return (low_bound + high_bound) / 2
         else:
-            for token in self.span:
-                print(token.dep_)
-            self.base = [token for token in self.span if token.dep_ == 'dobj'][0]
+            return self.check_for_mixed_fraction(quantity, unit)
 
-        print(self.name, self.base)
+
+    def check_for_mixed_fraction(self, quantity: str, unit: str):
+        """
+        Return quantity and unit as a Quantity, accounting for mixed fractions.
+        """
+
+        integer = '\d+'
+        fraction = '{}/{}'.format(integer, integer)
+        mixed_fraction = '({}) ({})'.format(integer, fraction)
+
+        pattern = re.compile(mixed_fraction)
+        match = pattern.match(quantity)
+        if match:
+            integer_part = self.ureg.parse_expression(match.group(1) + ' ' + unit)
+            fraction_part = self.ureg.parse_expression(match.group(2) + ' ' + unit)
+            return integer_part + fraction_part
+        else:
+            return self.ureg.parse_expression(quantity + ' ' + unit)
+
         
 
     def replace_unicode_fractions(self, quantity):
@@ -73,7 +118,20 @@ class Ingredient:
         for char, replacement in unicode_fracs.items():
             pattern = re.compile(char)
             quantity = re.sub(pattern, replacement, quantity)
+
         return quantity
 
-    def __str__(self):
+
+    def has_substring(self, substring):
+        words = '.*'.join(substring.split(' '))
+        print(words)
+        pattern = re.compile(words)
+        match = re.search(pattern, self.name)
+        if match:
+            return True
+        else:
+            return False
+
+
+    def __repr__(self):
         return self.name

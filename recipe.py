@@ -39,6 +39,8 @@ class Recipe:
 
         self.normalize_ingredients()
 
+        self.plot_ingredients()
+
         self.ingredient_nodes = []
 
         # The graph is a list of nodes, 
@@ -56,16 +58,13 @@ class Recipe:
 
         self.current_ref = None
 
-        for a, b in [('green bell pepper', 'green pepper'), ('extra virgin olive oil', 'olive oil'), ('oregano', 'oregano'), ('oregano', 'pepper')]:
-            print(self.is_substring(a, b))
+        
 
+        # for sentence in self.nlp(instructions).sents:
+        #     sent, = sentence.as_doc().sents
+        #     self.parse_steps(sent)
 
-        for sentence in self.nlp(instructions).sents:
-            sent, = sentence.as_doc().sents
-            self.parse_steps(sent)
-
-        self.visualize()
-
+        # self.visualize()
 
 
     def initialize_graph(self):
@@ -81,24 +80,10 @@ class Recipe:
         return graph
 
 
-    def is_substring(self, string, substring):
-        words = '.*'.join(substring.split(' '))
-        print(words)
-        pattern = re.compile(words)
-        match = re.search(pattern, string)
-        if match:
-            return True
-        else:
-            return False
-
-
-
     def parse_steps(self, sent):
+        """Attempt to add a node joining ingredients for each recipe step"""
 
-        print(sent)
-        print('current node:', self.current_ref)
         root = sent.root
-        displacy.serve(sent, style='dep')
         
         head, tail = self.split_conjuncts(sent)
 
@@ -107,39 +92,25 @@ class Recipe:
             action = head.root
             dobjs = self.get_direct_objects(head.root)
             ingredient_nodes, containers = self.identify_objects(dobjs)
-            print(ingredient_nodes)
-            print(containers)
      
             if ingredient_nodes:
                 node = Node(action, ingredient_nodes)
-                print('just created node', node)
                 self.add_new_node(node)
             elif containers:
                 self.current_ref = containers[0]
             else:
                 if isinstance(self.current_ref, Node):
                     node = Node(action, [self.current_ref])
-                    print('just created node', node)
-                    self.add_new_node(node)
-                    
-
-            
+                    self.add_new_node(node) 
 
         else:
-            print('not a verb')
-            print(head.text)
-
             head = list(self.nlp(head.text + '.').sents)[0]
             nouns = [n.root for n in head.noun_chunks]
-            print('nouns:', nouns)
 
             ingredient_nodes, containers = self.identify_objects(nouns)
-            print('found', ingredient_nodes)
-            print(containers)
 
             if ingredient_nodes:
                 node = Node(head, ingredient_nodes)
-                print('just created node', node)
                 self.add_new_node(node)
 
 
@@ -147,6 +118,7 @@ class Recipe:
                 self.parse_steps(tail)
 
     def add_new_node(self, node):
+        """Insert a node into the graph"""
         self.graph.append(node)
         for parent in node.parents:
             try:
@@ -158,9 +130,13 @@ class Recipe:
         self.current_ref = node
 
     def visualize(self):
-        plt.figure(figsize = (8, 8))
+        """Display the recipe as a tree graph with matplotlib"""
 
-        panel = plt.axes([0.1, 0.1, 0.7, 0.7])
+        self.plot_ingredients()
+
+        plt.figure(figsize = (8, 10))
+
+        panel = plt.axes([0.1, 0.1, 0.7, 0.7], frameon=False)
 
         panel.set_xlim(-1, len(self.ingredients))
         panel.set_ylim(-1, len(self.order) + 1)
@@ -195,8 +171,6 @@ class Recipe:
 
         for i, node in enumerate(self.order):
 
-            print('Node:', node, 'parents:', [p for p in node.parents])
-
             node.x = sum(p.x or 0 for p in node.parents) / len(node.parents)
             node.y = len(self.order) - 1 - i
 
@@ -226,7 +200,7 @@ class Recipe:
 
 
 
-        plt.show()
+        plt.savefig('recipe_tree.png', dpi=600)
 
 
     def get_all_conjuncts(self, token):
@@ -261,7 +235,6 @@ class Recipe:
         else:
             objs = [d for d in dobjs]
             for d in dobjs:
-                print(list(d.children))
                 objs += self.get_all_conjuncts(d)
 
         ings, conts = [], []
@@ -271,8 +244,6 @@ class Recipe:
                 ings.append(identity)
             elif isinstance(identity, Container):
                 conts.append(identity)
-            else:
-                print(type(identity))
 
         return ings, conts
 
@@ -289,6 +260,11 @@ class Recipe:
                 return container
 
         else:
+            for n in self.graph:
+                for i in n.ingredients:
+                    if i.has_substring(token.text):
+                        return n
+
             return max(self.graph, key=lambda node: node.max_base_similarity(token))
 
     def add_new_container(self, container: Container):
@@ -296,7 +272,6 @@ class Recipe:
 
     def is_kitchen_equipment(self, token):
         kitchen_equipment = ['oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan']
-        print('kitchen equipment?', token.text)
         if token.text in kitchen_equipment:
             return True
         return False
@@ -350,41 +325,27 @@ class Recipe:
 
 
     def plot_ingredients(self):
-        """Display relative volumes of ingredients as a stacked bar graph"""
+        """Display relative volumes of ingredients as a pie chart"""
 
-        plt.figure(figsize = (6, 6))
+        by_percent = sorted(self.ingredients, key=lambda x: x.percent, reverse=True)
+        labels = [ingredient.name for ingredient in by_percent]
+        sizes = [ingredient.percent for ingredient in by_percent]
 
-        panel = plt.axes([0.1, 0.1, 0.4, 0.8])
-        panel.set_xlim(0, 1)
-        panel.set_ylim(0, 1)
+        # make a unique rainbow color for each ingredient
+        colors = plt.cm.rainbow(np.linspace(0, 1, len(by_percent)))
 
-        # turn off tick marks and labels
-        panel.tick_params(
-            bottom=False,
-            labelbottom=False,
-            left=False,
-            labelleft=False
+        plt.figure(figsize=(10, 5))
+        
+        panel = plt.axes([0.1, 0.1, 0.5, 0.8])
+
+        panel.pie(sizes, colors=colors, radius=0.5)
+        panel.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+        plt.legend(
+            loc='center left',
+            bbox_to_anchor=(1, 0.5),
+            labels=labels
         )
-
-        # Sort so that the bars decrease in size as they go up
-        self.ingredients.sort(key=lambda x: x.percent, reverse=True)
-
-        # Plot a bar representing the relative volume each ingredient takes up
-        bottom = 0
-        for i, ingr in enumerate(self.ingredients):
-            rectangle = Rectangle(
-                [0, bottom], 
-                1,
-                ingr.percent,
-                edgecolor='black',
-                facecolor=[
-                    1 - (i / len(self.ingredients)),
-                    1 - (i / len(self.ingredients)),
-                    i / len(self.ingredients)
-                ]
-            )
-            panel.add_patch(rectangle)
-            bottom += ingr.percent
 
         plt.show()
 
