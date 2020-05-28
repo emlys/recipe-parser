@@ -18,7 +18,15 @@ Ideally, when the instruction parsing is working better, the tree will be entire
 ![Example recipe graph](/images/example_recipe_tree.png)
 
 ## Usage
-`python recipe_parser.py <URL of recipe>`
+```
+usage: recipe_parser.py [-h] url
+
+positional arguments:
+  url         URL of recipe to parse
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
 
 This will display a pie chart of the ingredients and a tree representation of the recipe as it was interpreted (very inaccurate as of now).
 
@@ -42,4 +50,4 @@ Currently only recipes made with the WordPress Recipe Maker are supported. This 
 ### Recipe averaging
   given a lot of recipes for the same thing, generate an 'average' recipe
 ### UI
-  - accept search input and display recipe data, comparison, average
+  accept search input and display recipe data, comparison, average
