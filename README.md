@@ -12,10 +12,11 @@ For example, here is a visualization of the proportion of ingredients in a vegan
 
 and a tree representation of a macaroni and cheese recipe ([https://www.momontimeout.com/best-homemade-baked-mac-and-cheese-recipe/](https://www.momontimeout.com/best-homemade-baked-mac-and-cheese-recipe/)]. Clearly there are some issues, but you get the idea.
 
-Ideally, when the instruction parsing is working better, the tree will be entirely connected and have one root node at the bottom, representing the final product.
+Ideally, when the instruction parsing is working better, the tree will be entirely connected and have one root node at the bottom, representing the final product. The pie chart only has slices for the ingredients that are measured by volume.
 
 ![Example pie chart](/images/example_pie_chart.png)
 ![Example recipe graph](/images/example_recipe_tree.png)
+
 
 ## Usage
 ```
@@ -31,6 +32,15 @@ optional arguments:
 This will display a pie chart of the ingredients and a tree representation of the recipe as it was interpreted (very inaccurate as of now).
 
 Currently only recipes made with the WordPress Recipe Maker are supported. This is commonly used by food blogs and can be identified by `wprm-` elements in the recipe HTML.
+
+### Requirements
+* beautifulsoup4
+* matplotlib
+* pint
+* spacy
+
+Tested with Python 3.8.
+
 
 
 ## Outline
