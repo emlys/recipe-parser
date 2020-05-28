@@ -5,6 +5,7 @@ Represent an ingredient in a recipe.
 import pint
 import re
 import spacy
+from spacy import displacy
 
 
 class Ingredient:
@@ -28,31 +29,37 @@ class Ingredient:
         self.nlp = nlp
 
         
-        print(name, quantity, unit)
         if quantity and unit:
+            # instantiate a pint.Quantity
             self.quantity = self.parse_quantity(quantity, unit)
-            print(quantity, self.quantity.magnitude)
         else:
+            # if no quantity given, assume 0
             self.quantity = pint.Quantity(0)
 
-        # self.percent = 0
+        # percent of recipe by volume that this ingredient makes up
+        # gets overwritten once all Ingredients are instantiated
+        self.percent = 0
 
-        # self.span = list(self.nlp(self.name).sents)[0]
+        # process the ingredient name into a spacy Span
+        self.span = list(self.nlp(self.name).sents)[0]
 
-        # for token in self.span:
-        #         print(token, token.pos_, token.tag_, token.dep_)
-
-        # if self.span.root.pos_ == 'NOUN' or self.span.root.pos_ == 'PROPN':
-        #     self.base = self.span.root
-        # else:
-        #     for token in self.span:
-        #         print(token.dep_)
-        #     self.base = [token for token in self.span if token.dep_ == 'dobj'][0]
-
-        # print(self.name, self.base)
+        # try to identify the key word in the ingredient name
+        if self.span.root.pos_ == 'NOUN' or self.span.root.pos_ == 'PROPN':
+            # ideally spacy will have identified the root noun
+            self.base = self.span.root
+        else:
+            # otherwise, take the first direct object of the phrase
+            for token in self.span:
+                if token.dep_ == 'dobj':
+                    self.base = token
+                    break
+            # if there is none, guess the first word
+            else:
+                self.base = self.span[0]
 
 
     def parse_quantity(self, quantity: str, unit: str) -> pint.Quantity:
+        """Parse quantity and unit into a pint.Quantity"""
 
         # Sometimes recipes use fraction characters like '¼'
         # To parse these we need to convert them to standard fractions like '1/4'
@@ -85,7 +92,6 @@ class Ingredient:
         """
         Return quantity and unit as a Quantity, accounting for mixed fractions.
         """
-
         integer = '\d+'
         fraction = '{}/{}'.format(integer, integer)
         mixed_fraction = '({}) ({})'.format(integer, fraction)
@@ -93,14 +99,22 @@ class Ingredient:
         pattern = re.compile(mixed_fraction)
         match = pattern.match(quantity)
         if match:
-            integer_part = self.ureg.parse_expression(match.group(1) + ' ' + unit)
-            fraction_part = self.ureg.parse_expression(match.group(2) + ' ' + unit)
+            integer_part = self.parse_expression(match.group(1), unit)
+            fraction_part = self.parse_expression(match.group(2), unit)
             return integer_part + fraction_part
         else:
+            return self.parse_expression(quantity, unit)
+
+
+    def parse_expression(self, quantity: str, unit: str) -> pint.Quantity:
+        """Parse quantity and unit into a pint.Quantity"""
+        try:
             return self.ureg.parse_expression(quantity + ' ' + unit)
+        except pint.errors.UndefinedUnitError:
+            # if unit isn't recognized, instantiate a dimensionless quantity
+            return self.ureg.Quantity(quantity)
 
         
-
     def replace_unicode_fractions(self, quantity):
         """Replace fraction characters with multi-character equivalents"""
         unicode_fracs = {
@@ -123,8 +137,12 @@ class Ingredient:
 
 
     def has_substring(self, substring):
+        """
+        Return True if self.name contains the words in substring (may be separated)
+
+        e.g. the substring 'green pepper' matches the name 'green bell pepper'
+        """
         words = '.*'.join(substring.split(' '))
-        print(words)
         pattern = re.compile(words)
         match = re.search(pattern, self.name)
         if match:

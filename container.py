@@ -9,6 +9,5 @@ from node import Node
 class Container:
 
     def __init__(self, name):
-        print('new Container:', name)
         self.name = name
                 

@@ -58,13 +58,11 @@ class Recipe:
 
         self.current_ref = None
 
-        
+        for sentence in self.nlp(instructions).sents:
+            sent, = sentence.as_doc().sents
+            self.parse_steps(sent)
 
-        # for sentence in self.nlp(instructions).sents:
-        #     sent, = sentence.as_doc().sents
-        #     self.parse_steps(sent)
-
-        # self.visualize()
+        self.visualize()
 
 
     def initialize_graph(self):
@@ -85,8 +83,12 @@ class Recipe:
 
         root = sent.root
         
+        # Some steps have multiple clauses which should be treated as separate steps
+        # Recursively parse any trailing clauses
         head, tail = self.split_conjuncts(sent)
 
+        # Most steps in recipes are commands
+        # Ideally spacy will have identified the instruction verb as the sentence root
         if head.root.pos_ == 'VERB':
 
             action = head.root
@@ -102,6 +104,7 @@ class Recipe:
                 if isinstance(self.current_ref, Node):
                     node = Node(action, [self.current_ref])
                     self.add_new_node(node) 
+
 
         else:
             head = list(self.nlp(head.text + '.').sents)[0]
@@ -131,8 +134,6 @@ class Recipe:
 
     def visualize(self):
         """Display the recipe as a tree graph with matplotlib"""
-
-        self.plot_ingredients()
 
         plt.figure(figsize = (8, 10))
 
@@ -187,7 +188,7 @@ class Recipe:
             plt.text(
                 node.x,
                 node.y,
-                ' ' + node.action.text
+                ' ' + node.action.text.split(' ')[0]
             )
 
             for parent in node.parents:
@@ -198,9 +199,7 @@ class Recipe:
                     linewidth=2
                 )
 
-
-
-        plt.savefig('recipe_tree.png', dpi=600)
+        plt.show()
 
 
     def get_all_conjuncts(self, token):
