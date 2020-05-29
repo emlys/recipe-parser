@@ -13,13 +13,20 @@ from recipe import Recipe
 class RecipeParser:
 
 	def __init__(self):
+		"""Instantiate NLP package and unit registry to use in Recipe"""
+
 		print('Loading spacy package...')
 		self.nlp = spacy.load('en_core_web_lg')
 		print('Loading pint unit registry...')
 		self.ureg = pint.UnitRegistry()
 
 	def parse(self, url: str):
-		"""Try to parse the webpage as a WordPress recipe"""
+		"""
+		Try to parse the webpage as a WordPress recipe.
+		
+		Parameters:
+			url: URL of webpage to parse
+		"""
 		print("Parsing recipe...")
 		page = requests.get(url)
 		self.soup = BeautifulSoup(page.text, 'lxml')
@@ -29,16 +36,30 @@ class RecipeParser:
 		else:
 			print('Recipe is not in WordPress Recipe Maker format')
 
-	def is_wordpress_recipe(self, soup: BeautifulSoup):
-		"""Return True if soup contains a WordPress recipe"""
+	def is_wordpress_recipe(self, soup: BeautifulSoup) -> bool:
+		"""
+		Return True if soup contains a WordPress recipe
+
+		Parameters:
+			soup: BeautifulSoup representation of webpage with recipe
+		Returns:
+			bool
+		"""
 		ingr = 'wprm-recipe-ingredients-container'
 		inst = 'wprm-recipe-instructions-container'
 		if self.soup.find(class_=ingr) and self.soup.find(class_=inst):
 			return True
 		return False
 
-	def parse_wordpress_recipe(self, soup: BeautifulSoup):
-		"""Read and interpret ingredients and instructions from a WordPress recipe"""
+	def parse_wordpress_recipe(self, soup: BeautifulSoup) -> Recipe:
+		"""
+		Read and interpret ingredients and instructions from a WordPress recipe
+
+		Parameters:
+			soup: BeautifulSoup representation of webpage with recipe
+		Returns:
+			Recipe object representation
+		"""
 		ingredient_tags = self.soup.find_all('li', class_='wprm-recipe-ingredient')
 		instruction_tags = self.soup.find_all('div', class_='wprm-recipe-instruction-text')
 
@@ -74,6 +95,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-	
-
-

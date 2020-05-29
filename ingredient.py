@@ -7,6 +7,8 @@ import re
 import spacy
 from spacy import displacy
 
+from spacy_helpers import get_top_noun
+
 
 class Ingredient:
 
@@ -44,18 +46,9 @@ class Ingredient:
         self.span = list(self.nlp(self.name).sents)[0]
 
         # try to identify the key word in the ingredient name
-        if self.span.root.pos_ == 'NOUN' or self.span.root.pos_ == 'PROPN':
-            # ideally spacy will have identified the root noun
-            self.base = self.span.root
-        else:
-            # otherwise, take the first direct object of the phrase
-            for token in self.span:
-                if token.dep_ == 'dobj':
-                    self.base = token
-                    break
-            # if there is none, guess the first word
-            else:
-                self.base = self.span[0]
+        # should be the syntactically highest noun in the name
+        # if no nouns are identified, guess the syntactic root
+        self.base = get_top_noun(self.span) or self.span.root
 
 
     def parse_quantity(self, quantity: str, unit: str) -> pint.Quantity:

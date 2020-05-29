@@ -1,6 +1,5 @@
 import pint
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import numpy as np
 import re
 import spacy
@@ -25,10 +24,11 @@ class Recipe:
         'parmesan'. Edges point from the 'cheddar' Node and the 'parmesan' Node
         to the new 'cheddar and parmesan' Node.
 
-        ingredients: list of Ingredient objects representing all recipe ingredients
-        instructions: string containing all the recipe instructions as sentences
-        ureg: pint.UnitRegistry object, must be shared among all Ingredients
-        nlp: spacy.Language object
+        Parameters:
+            ingredients: list of Ingredient objects representing all recipe ingredients
+            instructions: string containing all the recipe instructions as sentences
+            ureg: pint.UnitRegistry object, must be shared among all Ingredients
+            nlp: spacy.Language object
         """
 
 
@@ -65,7 +65,7 @@ class Recipe:
         self.visualize()
 
 
-    def initialize_graph(self):
+    def initialize_graph(self) -> list:
         """Return a list of Nodes, one storing each Ingredient"""
 
         graph = []
@@ -78,8 +78,13 @@ class Recipe:
         return graph
 
 
-    def parse_steps(self, sent):
-        """Attempt to add a node joining ingredients for each recipe step"""
+    def parse_steps(self, sent: spacy.Span):
+        """
+        Attempt to add a node joining ingredients for each recipe step
+
+        Parameters:
+            sent: spacy.Span object representing a recipe sentence
+        """
 
         root = sent.root
         
@@ -120,8 +125,13 @@ class Recipe:
         if tail:
                 self.parse_steps(tail)
 
-    def add_new_node(self, node):
-        """Insert a node into the graph"""
+    def add_new_node(self, node: Node):
+        """
+        Insert a node into the graph
+
+        Parameters:
+            node: a Node to insert
+        """
         self.graph.append(node)
         for parent in node.parents:
             try:
@@ -150,6 +160,7 @@ class Recipe:
             labelleft=False
         )
 
+        # plot each ingredient as a node labeled with its name
         for i, ing in enumerate(self.ingredient_nodes):
             plt.plot(
                 i,
@@ -170,6 +181,7 @@ class Recipe:
             ing.x = i
             ing.y = len(self.order)
 
+        # plot each recipe step as a node labeled with its action
         for i, node in enumerate(self.order):
 
             node.x = sum(p.x or 0 for p in node.parents) / len(node.parents)
@@ -191,6 +203,7 @@ class Recipe:
                 ' ' + node.action.text.split(' ')[0]
             )
 
+            # plot lines connecting child nodes to parent nodes
             for parent in node.parents:
                 plt.plot(
                     [parent.x, node.x],
@@ -202,30 +215,7 @@ class Recipe:
         plt.show()
 
 
-    def get_all_conjuncts(self, token):
-        conjs = []
-        current = self.get_shallow_conjuncts(token)
-        while current:
-            conjs += current
-            current = self.get_shallow_conjuncts(current[0])
-        return conjs
-
-
-
-    def get_shallow_conjuncts(self, token):
-        """
-        Return all immediate child conjuncts of the token.
-        This is different from the token.conjuncts attribute because this
-        only includes conjuncts that are children of the token.
-        """
-
-        return [child for child in token.children if child.dep_ == 'conj']
-
-    def get_direct_objects(self, token):
-        """
-        Return all direct objects of the token.
-        """
-        return [child for child in token.children if child.dep_ == 'dobj']
+    
 
     def identify_objects(self, dobjs):
 
@@ -275,38 +265,6 @@ class Recipe:
             return True
         return False
 
-
-    def get_objects(self, token):
-        
-        head, tail = self.split_conjugates(token)
-        objects = [head]
-
-        while tail:
-            
-            head, tail = self.split_conjugates(tail)
-            objects.append(head)
-
-        return objects
-
-    def split_conjuncts(self, span):
-        # Get the first conjunct
-        conjs = self.get_shallow_conjuncts(span.root)
-
-        if conjs:
-            conj = conjs[0]
-
-            # Split around the coordinating conjunction, if there is one
-            if conj.nbor(-1).dep_ == 'cc':
-                head = span.doc[: conj.i - 1]
-            else:
-                 head = span.doc[: conj.i]
-
-            tail = span.doc[conj.i :]
-
-            return head, tail
-
-        else:
-            return span, None
 
     def __str__(self):
         return self.text
