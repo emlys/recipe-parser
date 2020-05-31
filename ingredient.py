@@ -129,13 +129,13 @@ class Ingredient:
         return quantity
 
 
-    def has_substring(self, substring):
+    def has_words(self, words: str):
         """
         Return True if self.name contains the words in substring (may be separated)
 
         e.g. the substring 'green pepper' matches the name 'green bell pepper'
         """
-        words = '.*'.join(substring.split(' '))
+        words = '.*'.join(words.split(' '))
         pattern = re.compile(words)
         match = re.search(pattern, self.name)
         if match:

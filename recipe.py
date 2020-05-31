@@ -7,6 +7,8 @@ from spacy import displacy
 
 from container import Container
 from node import Node
+import spacy_helpers as sh
+
 
 
 class Recipe:
@@ -78,7 +80,7 @@ class Recipe:
         return graph
 
 
-    def parse_steps(self, sent: spacy.Span):
+    def parse_steps(self, sent: spacy.tokens.Span):
         """
         Attempt to add a node joining ingredients for each recipe step
 
@@ -90,15 +92,17 @@ class Recipe:
         
         # Some steps have multiple clauses which should be treated as separate steps
         # Recursively parse any trailing clauses
-        head, tail = self.split_conjuncts(sent)
+        head, tail = sh.split_conjuncts(sent)
+
+        #displacy.serve(head)
 
         # Most steps in recipes are commands
         # Ideally spacy will have identified the instruction verb as the sentence root
         if head.root.pos_ == 'VERB':
 
             action = head.root
-            dobjs = self.get_direct_objects(head.root)
-            ingredient_nodes, containers = self.identify_objects(dobjs)
+            nouns = sh.get_all_nouns(sent)
+            ingredient_nodes, containers = self.identify_objects(nouns)
      
             if ingredient_nodes:
                 node = Node(action, ingredient_nodes)
@@ -215,53 +219,75 @@ class Recipe:
         plt.show()
 
 
-    
 
-    def identify_objects(self, dobjs):
+    def best_matching_node(self, token):
 
-        if len(dobjs) == 0:
-            return [], []
+        scores = [node.max_base_similarity(token) for node in self.graph]
+        if max(scores) >= 0.7:
+            # return the node with the highest score
+            match = self.graph[np.argmax(np.array(scores))]
+            print(token, 'matches', match.ingredients)
         else:
-            objs = [d for d in dobjs]
-            for d in dobjs:
-                objs += self.get_all_conjuncts(d)
+            # if all the scores are low, the token likely isn't an ingredient
+            print(token, 'matches nothing')
+            return None
+
+
+    def identify_objects(self, objs):
 
         ings, conts = [], []
         for obj in objs:
-            identity = self.identify(obj)
-            if isinstance(identity, Node):
-                ings.append(identity)
-            elif isinstance(identity, Container):
-                conts.append(identity)
+            identities = self.identify(obj)
+            for identity in identities:
+                if isinstance(identity, Node):
+                    ings.append(identity)
+                elif isinstance(identity, Container):
+                    conts.append(identity)
 
         return ings, conts
 
 
-    def identify(self, token):
+    def identify(self, token) -> list:
+        """
+        Return the Node(s) to which the token refers
 
-        if self.is_kitchen_equipment(token):
+        Parameters:
+            token: spacy Token representing the word to ID
+        Returns:
+            list of Nodes that the token may refer to
+        """
+        print(token.text)
+        print('lemma:', token.lemma_)
+        print([t.text for t in token.subtree])
+        keyword = token.lemma_
+        if self.is_kitchen_equipment(keyword):
             for container in self.containers:
-                if token == container.name:
-                    return container
+                if keyword == container.name:
+                    return [container]
             else:
-                container = Container(token)
+                container = Container(keyword)
                 self.add_new_container(container)
-                return container
+                return [container]
 
         else:
+            matches = []
             for n in self.graph:
                 for i in n.ingredients:
-                    if i.has_substring(token.text):
-                        return n
+                    if i.has_words(keyword):
+                        matches.append(n)
+                        break
+            if matches:
+                return matches
 
-            return max(self.graph, key=lambda node: node.max_base_similarity(token))
+            return [self.best_matching_node(token)] or []
+
 
     def add_new_container(self, container: Container):
         self.containers.append(container)
 
-    def is_kitchen_equipment(self, token):
+    def is_kitchen_equipment(self, word: str):
         kitchen_equipment = ['oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan']
-        if token.text in kitchen_equipment:
+        if word in kitchen_equipment:
             return True
         return False
 

@@ -1,7 +1,8 @@
+from spacy.tokens import Span, Token
 #
 # Some helper functions that operate on spacy objects
 
-def get_all_conjuncts(token: spacy.Token) -> list:
+def get_all_conjuncts(token: Token) -> list:
         """
         Return all conjuncts of the token (words connected to it by conjunctions)
 
@@ -18,7 +19,7 @@ def get_all_conjuncts(token: spacy.Token) -> list:
         return conjs
 
 
-def get_shallow_conjuncts(token: spacy.Token) -> list:
+def get_shallow_conjuncts(token: Token) -> list:
     """
     Return all immediate child conjuncts of the token.
     This is different from the token.conjuncts attribute because this
@@ -33,7 +34,7 @@ def get_shallow_conjuncts(token: spacy.Token) -> list:
     return [child for child in token.children if child.dep_ == 'conj']
 
 
-def get_objects(token):
+def get_objects(token: Token) -> list:
     
     head, tail = split_conjuncts(token)
     objects = [head]
@@ -46,7 +47,7 @@ def get_objects(token):
     return objects
 
 
-def split_conjuncts(span):
+def split_conjuncts(span: Span):
     # Get the first conjunct
     conjs = get_shallow_conjuncts(span.root)
 
@@ -67,14 +68,57 @@ def split_conjuncts(span):
         return span, None
 
 
-def get_direct_objects(token: spacy.Token) -> list:
+def get_objects(token: Token) -> list:
     """
-    Return all direct objects of the token.
+    Return all objects of the token.
 
     Parameters:
         token: spacy Token (word)
     Returns:
         list of spacy Tokens
     """
-    return [child for child in token.children if child.dep_ == 'dobj']
+    # get all immediate direct objects of the token
+    dobjs = [child for child in token.children if child.dep_ == 'dobj']
+    if len(dobjs) == 0:
+        return [], []
+    else:
+        objs = [d for d in dobjs]
+        for d in dobjs:
+            objs += self.get_all_conjuncts(d)
+
+
+def get_top_noun(span: Span):
+    """
+    Return the noun that is highest in the span syntax
+
+    Parameters:
+        span: spacy.Span which may contain a noun
+    Returns:
+        spacy Token object
+    """
+
+    # search the phrase syntax breadth-first
+    queue = [span.root]
+    while queue:
+        current = queue.pop(0)
+        # may be a noun or proper noun
+        if current.pos_ in ['NOUN', 'PROPN']:
+            return current
+        for child in current.children:
+            queue.append(child)
+
+    # there might not be a noun
+    return None
+
+def get_all_nouns(span: Span):
+    """
+    Return a list of all nouns in the span
+
+    Parameters:
+        span: spacy.Span which may contain a noun
+    Returns:
+        spacy Token object
+    """
+    return [token for token in span if token.pos_ in ['NOUN', 'PROPN']]
+
 
