@@ -6,8 +6,8 @@ import spacy
 
 from bs4 import BeautifulSoup
 
-from ingredient import Ingredient
-from recipe import Recipe
+from . import ingredient
+from . import recipe
 
 
 class RecipeParser:
@@ -17,10 +17,11 @@ class RecipeParser:
 
 		print('Loading spacy package...')
 		self.nlp = spacy.load('en_core_web_lg')
-		print('Loading pint unit registry...')
+		print('done. Loading pint unit registry...')
 		self.ureg = pint.UnitRegistry()
+		print('done.')
 
-	def parse(self, url: str):
+	def parse(self, soup):
 		"""
 		Try to parse the webpage as a WordPress recipe.
 		
@@ -29,14 +30,14 @@ class RecipeParser:
 		"""
 		print("Parsing recipe...")
 		page = requests.get(url)
-		self.soup = BeautifulSoup(page.text, 'lxml')
+		soup = BeautifulSoup(page.text, 'lxml')
 
-		if self.is_wordpress_recipe(self.soup):
-			self.parse_wordpress_recipe(self.soup)
+		if self.is_wordpress_recipe(soup):
+			self.parse_wordpress_recipe(soup)
 		else:
 			print('Recipe is not in WordPress Recipe Maker format')
 
-	def is_wordpress_recipe(self, soup: BeautifulSoup) -> bool:
+	def is_wordpress_recipe(self, soup):
 		"""
 		Return True if soup contains a WordPress recipe
 
@@ -47,11 +48,11 @@ class RecipeParser:
 		"""
 		ingr = 'wprm-recipe-ingredients-container'
 		inst = 'wprm-recipe-instructions-container'
-		if self.soup.find(class_=ingr) and self.soup.find(class_=inst):
+		if soup.find(class_=ingr) and soup.find(class_=inst):
 			return True
 		return False
 
-	def parse_wordpress_recipe(self, soup: BeautifulSoup) -> Recipe:
+	def parse_wordpress_recipe(self, soup):
 		"""
 		Read and interpret ingredients and instructions from a WordPress recipe
 
@@ -60,8 +61,8 @@ class RecipeParser:
 		Returns:
 			Recipe object representation
 		"""
-		ingredient_tags = self.soup.find_all('li', class_='wprm-recipe-ingredient')
-		instruction_tags = self.soup.find_all('div', class_='wprm-recipe-instruction-text')
+		ingredient_tags = soup.find_all('li', class_='wprm-recipe-ingredient')
+		instruction_tags = soup.find_all('div', class_='wprm-recipe-instruction-text')
 
 		ingredients, instructions = [], []
 
@@ -73,11 +74,11 @@ class RecipeParser:
 
 			amount, unit, name, notes = [attr.get_text().lower() if attr else None for attr in [amount, unit, name, notes]]
 
-			ingredients.append(Ingredient(amount, unit, name, notes, self.ureg, self.nlp))
+			ingredients.append(ingredient.Ingredient(amount, unit, name, notes, self.ureg, self.nlp))
 
 		instructions = ' '.join([tag.get_text() for tag in instruction_tags])
 
-		r = Recipe(ingredients, instructions, self.ureg, self.nlp)
+		r = recipe.Recipe(ingredients, instructions, self.ureg, self.nlp)
 
 		return r
 

@@ -7,7 +7,7 @@ import re
 import spacy
 from spacy import displacy
 
-from spacy_helpers import get_top_noun
+from . import spacy_helpers
 
 
 class Ingredient:
@@ -48,7 +48,7 @@ class Ingredient:
         # try to identify the key word in the ingredient name
         # should be the syntactically highest noun in the name
         # if no nouns are identified, guess the syntactic root
-        self.base = get_top_noun(self.span) or self.span.root
+        self.base = spacy_helpers.get_top_noun(self.span) or self.span.root
 
 
     def parse_quantity(self, quantity: str, unit: str) -> pint.Quantity:

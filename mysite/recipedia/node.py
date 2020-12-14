@@ -1,7 +1,15 @@
 class Node:
 
-    def __init__(self, action=None, parents=None):
+    def __init__(self, instruction=None, action=None, parents=None):
+        """
+        Args:
+            instruction (spacy.Span): the sentence or clause corresponding to 
+                this node
+            action:
+            parents (list[Node]): list of nodes that this node is derived from.
+        """
 
+        self.instruction = instruction or ''
         self.action = action
         self.parents = parents or []
         self.children = []

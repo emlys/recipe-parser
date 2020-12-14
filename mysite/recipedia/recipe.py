@@ -5,9 +5,9 @@ import re
 import spacy
 from spacy import displacy
 
-from container import Container
-from node import Node
-import spacy_helpers as sh
+from .container import Container
+from .node import Node
+from . import spacy_helpers as sh
 
 
 
@@ -41,7 +41,7 @@ class Recipe:
 
         self.normalize_ingredients()
 
-        self.plot_ingredients()
+        # self.plot_ingredients()
 
         self.ingredient_nodes = []
 
@@ -64,7 +64,7 @@ class Recipe:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
 
-        self.visualize()
+        # self.visualize()
 
 
     def initialize_graph(self) -> list:
@@ -80,7 +80,7 @@ class Recipe:
         return graph
 
 
-    def parse_steps(self, sent: spacy.tokens.Span):
+    def parse_steps(self, sent):
         """
         Attempt to add a node joining ingredients for each recipe step
 
@@ -105,13 +105,13 @@ class Recipe:
             ingredient_nodes, containers = self.identify_objects(nouns)
      
             if ingredient_nodes:
-                node = Node(action, ingredient_nodes)
+                node = Node(head, action, ingredient_nodes)
                 self.add_new_node(node)
             elif containers:
                 self.current_ref = containers[0]
             else:
                 if isinstance(self.current_ref, Node):
-                    node = Node(action, [self.current_ref])
+                    node = Node(head, action, [self.current_ref])
                     self.add_new_node(node) 
 
 
@@ -122,14 +122,14 @@ class Recipe:
             ingredient_nodes, containers = self.identify_objects(nouns)
 
             if ingredient_nodes:
-                node = Node(head, ingredient_nodes)
+                node = Node(None, head, ingredient_nodes)
                 self.add_new_node(node)
 
 
         if tail:
                 self.parse_steps(tail)
 
-    def add_new_node(self, node: Node):
+    def add_new_node(self, node):
         """
         Insert a node into the graph
 

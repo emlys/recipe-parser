@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css?family=Josefin+Sans');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+html {
+    height: 100%;
+    width: 100%;
+}
+.page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100%;
+    width: 100%;
+    background-color: #f5e7a8;
+    font-family: 'Josefin Sans';
+    margin: 0;
+    padding: 0;
+}
+
+.bottom {
+    display: flex;
+    justify-content: space-around;
+    flex-direction: row;
+    align-items: center;
+    height: 50%;
+    width: 100%;
+    margin: 1em;
+}
+
+.recipe {
+    display: flex;
+    flex-direction: column;
+    width: 40%;
+    height: 50%;
+    background-color: #fffcea;
+    border: 4px solid black;
+    border-radius: 10px;
+}
+
+.header {
+    justify-content: center;
+    font-size: 60px;
+}
+
+.search-bar {
+    flex-grow: 1;
+    height: 100%;
+    border: 0em;
+    margin: 0.75em;
+    background-color: transparent;
+    justify-content: center;
+}
+
+.search-submit {
+    font-family: 'Material Icons';
+    border: 0em;
+    margin: 0.75em;
+    padding: 0em;
+    height: 100%;
+    width: 2em;
+    background-color: transparent;
+
+}
+
+.search-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 2em;
+    width: 30em;
+    padding: 0em;
+    margin: 1em;
+    border: 4px solid black;
+    border-radius: 12px;
+    background-color: #fffcea;
+}
