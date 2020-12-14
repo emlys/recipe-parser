@@ -37,9 +37,17 @@ html {
     border-radius: 10px;
 }
 
-.header {
+h1 {
     justify-content: center;
-    font-size: 60px;
+    font-size: 3.75em;
+    margin-top: 0.5em;
+    margin-bottom: 0.2em;
+}
+
+h2 {
+    justify-content: center;
+    font-size: 1.5em;
+    margin: 0.2em;
 }
 
 .search-bar {

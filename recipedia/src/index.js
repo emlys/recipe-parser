@@ -9,13 +9,6 @@ class SearchBar extends React.Component {
         this.state = {value: ''};
     }
 
-    // componentDidMount() {
-    //     const search_url = 'http://127.0.0.1:8000/recipedia/search?query=';
-    //     fetch(search_url + this.state.query)
-    //     .then(res => res.json())
-    //     .then();
-    // }
-
     render() {
         console.log('rendering search bar...');
 
@@ -40,15 +33,17 @@ class SearchBar extends React.Component {
 }
 
 class Recipe extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {value: ''}
-    }
 
     render() {
+        console.log(this.props)
+        const steps = this.props.steps.map(
+            (step, index) => <li key={index}>{step}</li>);
+        console.log('steps:');
+        console.log(steps);
         return (
             <div className="recipe" id="recipe_container">
-                 <h2>Recipe</h2>
+                 <h3>Recipe</h3>
+                 <ul>{steps}</ul>
             </div>
         )
     }
@@ -59,7 +54,8 @@ class Recipedia extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            value: ''
+            value: '',
+            steps: []
         }
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -72,21 +68,31 @@ class Recipedia extends React.Component {
 
     handleSubmit(event) {
         console.log('submitted: ' + this.state.value);
-        alert('A query was submitted: ' + this.state.value);
         event.preventDefault();
+
+        const search_url = 'http://127.0.0.1:8000/recipedia/search?query=';
+        fetch(search_url + this.state.value)
+        .then(res => res.json())
+        .then(json => this.setState({'steps': json.recipe}));
+        console.log('here');
+        console.log(this.state);
+
     }
 
     render() {
+        console.log(this.state.steps);
         return (
             <div className="page">
                 <h1 className="header">Recipedia</h1>
+                <h2>a recipe synthesizer</h2>
                 <SearchBar 
                     value={this.state.value}
                     handleChange={this.handleChange}
                     handleSubmit={this.handleSubmit} />
                 <div className="bottom">
-                    <Recipe />
-                    <h2>Tree</h2>
+                    <Recipe 
+                        steps={this.state.steps}/>
+                    <h3>Tree</h3>
                 </div>
             </div>
         )

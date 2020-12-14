@@ -27,8 +27,15 @@ def find_and_parse_recipes(request):
         print(node.instruction)
         if node.instruction:
             print(node.instruction.text)
-    return JsonResponse({'recipe': [
-        node.instruction.text for node in recipes[0].order if node.instruction]})
+            
+    response = JsonResponse({
+        'recipe': [node.instruction.text for node in recipes[0].order if node.instruction]
+    })
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+    return response
 
 
 def search(query, number=10):
