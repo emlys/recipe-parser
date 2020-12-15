@@ -41,9 +41,11 @@ class Recipe:
 
         self.normalize_ingredients()
 
-        # self.plot_ingredients()
-
         self.ingredient_nodes = []
+
+        # This list of Nodes will store them in the order that they
+        # are parsed/happen in the instructions
+        self.order = []
 
         # The graph is a list of nodes, 
         # each one being the root of a different connected component.
@@ -52,18 +54,20 @@ class Recipe:
         # at the time they are instantiated.
         self.graph = self.initialize_graph()
 
-        # This list of Nodes will store them in the order that they
-        # are parsed/happen in the instructions
-        self.order = []
+        for node in self.order:
+            print(node.index)
 
         self.containers = []
 
         self.current_ref = None
 
+        self.node_index = len(self.ingredient_nodes)
         for sentence in self.nlp(instructions).sents:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
 
+        for node in self.order:
+            print(node.index)
         # self.visualize()
 
 
@@ -71,10 +75,11 @@ class Recipe:
         """Return a list of Nodes, one storing each Ingredient"""
 
         graph = []
-        for i in self.ingredients:
-            n = Node()
-            n.ingredients.append(i)
+        for index, ingredient in enumerate(self.ingredients):
+            n = Node(index)
+            n.ingredients.append(ingredient)
             graph.append(n)
+            self.order.append(n)
             self.ingredient_nodes.append(n)
 
         return graph
@@ -94,6 +99,7 @@ class Recipe:
         # Recursively parse any trailing clauses
         head, tail = sh.split_conjuncts(sent)
 
+
         #displacy.serve(head)
 
         # Most steps in recipes are commands
@@ -105,13 +111,15 @@ class Recipe:
             ingredient_nodes, containers = self.identify_objects(nouns)
      
             if ingredient_nodes:
-                node = Node(head, action, ingredient_nodes)
+                node = Node(self.node_index, head, action, ingredient_nodes)
+                self.node_index += 1
                 self.add_new_node(node)
             elif containers:
                 self.current_ref = containers[0]
             else:
                 if isinstance(self.current_ref, Node):
-                    node = Node(head, action, [self.current_ref])
+                    node = Node(self.node_index, head, action, [self.current_ref])
+                    self.node_index += 1
                     self.add_new_node(node) 
 
 
@@ -122,7 +130,8 @@ class Recipe:
             ingredient_nodes, containers = self.identify_objects(nouns)
 
             if ingredient_nodes:
-                node = Node(None, head, ingredient_nodes)
+                node = Node(self.node_index, None, head, ingredient_nodes)
+                self.node_index += 1
                 self.add_new_node(node)
 
 

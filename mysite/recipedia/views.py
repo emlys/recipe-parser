@@ -29,7 +29,7 @@ def find_and_parse_recipes(request):
             print(node.instruction.text)
             
     response = JsonResponse({
-        'recipe': [node.instruction.text for node in recipes[0].order if node.instruction]
+        'recipe': [node.as_dict() for node in recipes[0].order]
     })
     response["Access-Control-Allow-Origin"] = "*"
     response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
