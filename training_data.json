@@ -1,0 +1,1692 @@
+{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "In another large bowl, beat the egg whites and cream of tartar on medium speed until soft peaks form.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "In",
+                            "tag": "IN",
+                            "head": 5,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "another",
+                            "tag": "DT",
+                            "head": 2,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "large",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "bowl",
+                            "tag": "NN",
+                            "head": -3,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": 1,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "beat",
+                            "tag": "VBD",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 2,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "egg",
+                            "tag": "NN",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "whites",
+                            "tag": "NNS",
+                            "head": -3,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "and",
+                            "tag": "CC",
+                            "head": -1,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": "cream",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 11,
+                            "orth": "of",
+                            "tag": "IN",
+                            "head": -3,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 12,
+                            "orth": "tartar",
+                            "tag": "NN",
+                            "head": -1,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 13,
+                            "orth": "on",
+                            "tag": "IN",
+                            "head": -8,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 14,
+                            "orth": "medium",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 15,
+                            "orth": "speed",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 16,
+                            "orth": "until",
+                            "tag": "IN",
+                            "head": -11,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 17,
+                            "orth": "soft",
+                            "tag": "JJ",
+                            "head": 2,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 18,
+                            "orth": "peaks",
+                            "tag": "NNS",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 19,
+                            "orth": "form",
+                            "tag": "NN",
+                            "head": -3,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 20,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -15,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Set aside.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Set",
+                            "tag": "VBN",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "aside",
+                            "tag": "RB",
+                            "head": -1,
+                            "dep": "advmod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -2,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Melt the remaining 3 tablespoons butter in the same skillet and add the celery, onions and bell peppers.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Melt",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 4,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "remaining",
+                            "tag": "VBG",
+                            "head": 3,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "3",
+                            "tag": "CD",
+                            "head": 1,
+                            "dep": "nummod",
+                            "ner": "B-QUANTITY"
+                        },
+                        {
+                            "id": 4,
+                            "orth": "tablespoons",
+                            "tag": "NNS",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "L-QUANTITY"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "butter",
+                            "tag": "NN",
+                            "head": -5,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "in",
+                            "tag": "IN",
+                            "head": -6,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 2,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "same",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "skillet",
+                            "tag": "NN",
+                            "head": -3,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": "and",
+                            "tag": "CC",
+                            "head": -10,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 11,
+                            "orth": "add",
+                            "tag": "VB",
+                            "head": -11,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 12,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 13,
+                            "orth": "celery",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 14,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": -1,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 15,
+                            "orth": "onions",
+                            "tag": "NNS",
+                            "head": -2,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 16,
+                            "orth": "and",
+                            "tag": "CC",
+                            "head": -1,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 17,
+                            "orth": "bell",
+                            "tag": "NNP",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 18,
+                            "orth": "peppers",
+                            "tag": "NNS",
+                            "head": -3,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 19,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -19,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Place a plate on cucumbers to keep them submerged & let stand at room temperature for 24 hours.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Place",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "a",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "plate",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "on",
+                            "tag": "IN",
+                            "head": -3,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": "cucumbers",
+                            "tag": "NNS",
+                            "head": -1,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "to",
+                            "tag": "TO",
+                            "head": 1,
+                            "dep": "aux",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "keep",
+                            "tag": "VB",
+                            "head": -6,
+                            "dep": "advcl",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "them",
+                            "tag": "PRP",
+                            "head": -1,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "submerged",
+                            "tag": "JJ",
+                            "head": -2,
+                            "dep": "oprd",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "&",
+                            "tag": "CC",
+                            "head": -3,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": "let",
+                            "tag": "VBD",
+                            "head": -4,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 11,
+                            "orth": "stand",
+                            "tag": "VB",
+                            "head": -1,
+                            "dep": "xcomp",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 12,
+                            "orth": "at",
+                            "tag": "IN",
+                            "head": -1,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 13,
+                            "orth": "room",
+                            "tag": "NN",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 14,
+                            "orth": "temperature",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 15,
+                            "orth": "for",
+                            "tag": "IN",
+                            "head": -4,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 16,
+                            "orth": "24",
+                            "tag": "CD",
+                            "head": 1,
+                            "dep": "nummod",
+                            "ner": "B-TIME"
+                        },
+                        {
+                            "id": 17,
+                            "orth": "hours",
+                            "tag": "NNS",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "L-TIME"
+                        },
+                        {
+                            "id": 18,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -18,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Toss the endive, apples, and walnuts together in a large serving bowl.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Toss",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "endive",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": -1,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": "apples",
+                            "tag": "NNS",
+                            "head": -2,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": -1,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "and",
+                            "tag": "CC",
+                            "head": -2,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "walnuts",
+                            "tag": "NNS",
+                            "head": -3,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "together",
+                            "tag": "RB",
+                            "head": -8,
+                            "dep": "advmod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "in",
+                            "tag": "IN",
+                            "head": -9,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": "a",
+                            "tag": "DT",
+                            "head": 3,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 11,
+                            "orth": "large",
+                            "tag": "JJ",
+                            "head": 2,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 12,
+                            "orth": "serving",
+                            "tag": "VBG",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 13,
+                            "orth": "bowl",
+                            "tag": "NN",
+                            "head": -4,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 14,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -14,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Wipe the fish fillets with a damp cloth.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Wipe",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 2,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "fish",
+                            "tag": "NN",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "fillets",
+                            "tag": "NNS",
+                            "head": -3,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": "with",
+                            "tag": "IN",
+                            "head": -4,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "a",
+                            "tag": "DT",
+                            "head": 2,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "damp",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "cloth",
+                            "tag": "NN",
+                            "head": -3,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -8,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "You can add more oil around the perimeter of the wok if you want some extra insurance against sticking.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "You",
+                            "tag": "PRP",
+                            "head": 2,
+                            "dep": "nsubj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "can",
+                            "tag": "MD",
+                            "head": 1,
+                            "dep": "aux",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "add",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "more",
+                            "tag": "JJR",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": "oil",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "around",
+                            "tag": "IN",
+                            "head": -3,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "perimeter",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "of",
+                            "tag": "IN",
+                            "head": -1,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": "wok",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 11,
+                            "orth": "if",
+                            "tag": "IN",
+                            "head": 2,
+                            "dep": "mark",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 12,
+                            "orth": "you",
+                            "tag": "PRP",
+                            "head": 1,
+                            "dep": "nsubj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 13,
+                            "orth": "want",
+                            "tag": "VBP",
+                            "head": -11,
+                            "dep": "advcl",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 14,
+                            "orth": "some",
+                            "tag": "DT",
+                            "head": 2,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 15,
+                            "orth": "extra",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 16,
+                            "orth": "insurance",
+                            "tag": "NN",
+                            "head": -3,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 17,
+                            "orth": "against",
+                            "tag": "IN",
+                            "head": -1,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 18,
+                            "orth": "sticking",
+                            "tag": "VBG",
+                            "head": -1,
+                            "dep": "pcomp",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 19,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -17,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Or a crumble or streusel topping would be great.)",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Or",
+                            "tag": "CC",
+                            "head": 7,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "a",
+                            "tag": "DT",
+                            "head": 4,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "crumble",
+                            "tag": "JJ",
+                            "head": 3,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "or",
+                            "tag": "CC",
+                            "head": -1,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": "streusel",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "topping",
+                            "tag": "NN",
+                            "head": 2,
+                            "dep": "nsubj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "would",
+                            "tag": "MD",
+                            "head": 1,
+                            "dep": "aux",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "be",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "great",
+                            "tag": "JJ",
+                            "head": -1,
+                            "dep": "acomp",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -2,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": ")",
+                            "tag": "-RRB-",
+                            "head": -3,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Remove from oven.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Remove",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "from",
+                            "tag": "IN",
+                            "head": -1,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "oven",
+                            "tag": "NN",
+                            "head": -1,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -3,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "In a measuring cup, stir together 3 Tbsp honey, 2 Tbsp lemon juice and 2 Tbsp lime juice, until honey is dissolved.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "In",
+                            "tag": "IN",
+                            "head": 5,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "a",
+                            "tag": "DT",
+                            "head": 2,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "measuring",
+                            "tag": "VBG",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "cup",
+                            "tag": "NN",
+                            "head": -3,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": 1,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "stir",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "together",
+                            "tag": "RB",
+                            "head": -1,
+                            "dep": "advmod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "3",
+                            "tag": "CD",
+                            "head": 2,
+                            "dep": "nummod",
+                            "ner": "U-QUANTITY"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "Tbsp",
+                            "tag": "NN",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "honey",
+                            "tag": "NN",
+                            "head": -4,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": -1,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 11,
+                            "orth": "2",
+                            "tag": "CD",
+                            "head": 3,
+                            "dep": "nummod",
+                            "ner": "B-QUANTITY"
+                        },
+                        {
+                            "id": 12,
+                            "orth": "Tbsp",
+                            "tag": "NN",
+                            "head": 2,
+                            "dep": "compound",
+                            "ner": "L-QUANTITY"
+                        },
+                        {
+                            "id": 13,
+                            "orth": "lemon",
+                            "tag": "NN",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 14,
+                            "orth": "juice",
+                            "tag": "NN",
+                            "head": -5,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 15,
+                            "orth": "and",
+                            "tag": "CC",
+                            "head": -1,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 16,
+                            "orth": "2",
+                            "tag": "CD",
+                            "head": 3,
+                            "dep": "nummod",
+                            "ner": "B-QUANTITY"
+                        },
+                        {
+                            "id": 17,
+                            "orth": "Tbsp",
+                            "tag": "NN",
+                            "head": 2,
+                            "dep": "compound",
+                            "ner": "L-QUANTITY"
+                        },
+                        {
+                            "id": 18,
+                            "orth": "lime",
+                            "tag": "NN",
+                            "head": 1,
+                            "dep": "compound",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 19,
+                            "orth": "juice",
+                            "tag": "NN",
+                            "head": -5,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 20,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": -15,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 21,
+                            "orth": "until",
+                            "tag": "IN",
+                            "head": 3,
+                            "dep": "mark",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 22,
+                            "orth": "honey",
+                            "tag": "NN",
+                            "head": 2,
+                            "dep": "nsubjpass",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 23,
+                            "orth": "is",
+                            "tag": "VBZ",
+                            "head": 1,
+                            "dep": "auxpass",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 24,
+                            "orth": "dissolved",
+                            "tag": "VBN",
+                            "head": -19,
+                            "dep": "advcl",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 25,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -20,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Once oil is 350F, place dried potatoes (1-cup at a time) in the oil and stir to separate them.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Once",
+                            "tag": "IN",
+                            "head": 2,
+                            "dep": "mark",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "oil",
+                            "tag": "NN",
+                            "head": 1,
+                            "dep": "nsubj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "is",
+                            "tag": "VBZ",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "350F",
+                            "tag": "CD",
+                            "head": -1,
+                            "dep": "attr",
+                            "ner": "U-CARDINAL"
+                        },
+                        {
+                            "id": 4,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": -2,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "place",
+                            "tag": "NN",
+                            "head": 2,
+                            "dep": "nmod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "dried",
+                            "tag": "VBN",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "potatoes",
+                            "tag": "NNS",
+                            "head": -5,
+                            "dep": "attr",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "(",
+                            "tag": "-LRB-",
+                            "head": -1,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "1-cup",
+                            "tag": "CD",
+                            "head": -2,
+                            "dep": "appos",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": "at",
+                            "tag": "IN",
+                            "head": -3,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 11,
+                            "orth": "a",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 12,
+                            "orth": "time",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 13,
+                            "orth": ")",
+                            "tag": "-RRB-",
+                            "head": -6,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 14,
+                            "orth": "in",
+                            "tag": "IN",
+                            "head": -7,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 15,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 16,
+                            "orth": "oil",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 17,
+                            "orth": "and",
+                            "tag": "CC",
+                            "head": -15,
+                            "dep": "cc",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 18,
+                            "orth": "stir",
+                            "tag": "VB",
+                            "head": -16,
+                            "dep": "conj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 19,
+                            "orth": "to",
+                            "tag": "TO",
+                            "head": 1,
+                            "dep": "aux",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 20,
+                            "orth": "separate",
+                            "tag": "VB",
+                            "head": -2,
+                            "dep": "xcomp",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 21,
+                            "orth": "them",
+                            "tag": "PRP",
+                            "head": -1,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 22,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -20,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Sprinkle with diced strawberries.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Sprinkle",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "with",
+                            "tag": "IN",
+                            "head": -1,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "diced",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": "strawberries",
+                            "tag": "NNS",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -4,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}{
+    "id": 0,
+    "paragraphs": [
+        {
+            "raw": "Discard the wilted, limp outer leaves of the cabbage.",
+            "sentences": [
+                {
+                    "tokens": [
+                        {
+                            "id": 0,
+                            "orth": "Discard",
+                            "tag": "VB",
+                            "head": 0,
+                            "dep": "ROOT",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 1,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 2,
+                            "orth": "wilted",
+                            "tag": "JJ",
+                            "head": -2,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 3,
+                            "orth": ",",
+                            "tag": ",",
+                            "head": 3,
+                            "dep": "punct",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 4,
+                            "orth": "limp",
+                            "tag": "VB",
+                            "head": 2,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 5,
+                            "orth": "outer",
+                            "tag": "JJ",
+                            "head": 1,
+                            "dep": "amod",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 6,
+                            "orth": "leaves",
+                            "tag": "NNS",
+                            "head": -6,
+                            "dep": "dobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 7,
+                            "orth": "of",
+                            "tag": "IN",
+                            "head": -1,
+                            "dep": "prep",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 8,
+                            "orth": "the",
+                            "tag": "DT",
+                            "head": 1,
+                            "dep": "det",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 9,
+                            "orth": "cabbage",
+                            "tag": "NN",
+                            "head": -2,
+                            "dep": "pobj",
+                            "ner": "O"
+                        },
+                        {
+                            "id": 10,
+                            "orth": ".",
+                            "tag": ".",
+                            "head": -10,
+                            "dep": "punct",
+                            "ner": "O"
+                        }
+                    ],
+                    "brackets": []
+                }
+            ],
+            "cats": []
+        }
+    ]
+}
