@@ -8,71 +8,131 @@ from fractions import Fraction
 from bs4 import BeautifulSoup
 
 from recipedia.ingredient import Ingredient
-from recipedia import recipe
+from recipedia.recipe import Recipe
 
 
 class RecipeParser:
 
     def __init__(self):
-        """Instantiate NLP package and unit registry to use in Recipe"""
-
+        """Instantiate NLP package and unit registry to use in Recipes"""
         print('Loading spacy package...')
         self.nlp = spacy.load('en_core_web_lg')
         print('done. Loading pint unit registry...')
         self.ureg = pint.UnitRegistry()
         print('done.')
 
+# ---- Whole recipe parsing ---------------------------------------------------
+
     def parse(self, url):
         """
-        Try to parse the webpage as a WordPress recipe.
+        Try to parse the webpage into a Recipe object.
+
+        Pages made with WordPress Recipe Maker and certain popular recipe
+        websites are supported.
         
-        Parameters:
+        Args:
             url: URL of webpage to parse
+        Returns:
+            Recipe object
         """
+        # get what's between the second and third slashes
+        domain = url.split('/')[2]
         page = requests.get(url)
         soup = BeautifulSoup(page.text, 'lxml')
 
-        if self.is_wordpress_recipe(soup):
-            self.parse_wordpress_recipe(soup)
+        # because some of the formats use chained functions, it's not
+        # convenient to implement a lazy dictionary.
+        # going with if/else for now
+        ingredient_tags, instruction_tags = None, None
+        if domain == 'www.allrecipes.com':
+            ingredient_tags = soup.find_all('span', class_='ingredients-item-name')
+            instruction_tags = soup.find_all('li', class_='instructions-section-item')
+        elif domain == 'www.foodnetwork.com':
+            ingredient_tags = soup.find_all('span', class_='o-Ingredients__a-Ingredient--CheckboxLabel')
+            instruction_tags = soup.find_all('li', class_='o-Method__m-Step')
+        elif domain == 'www.tasteofhome.com':
+            ingredient_tags = soup.find('ul', class_='recipe-ingredients__list').find_all('li')
+            instruction_tags = soup.find_all('li', class_='recipe-directions__item')
+        elif domain == 'www.simplyrecipes.com':
+            ingredient_tags = soup.find_all('li', class_='ingredient')
+            instruction_tags = soup.find(class_='recipe-method instructions').find_all('p')
+        elif domain == 'www.thespruceeats.com':
+            ingredient_tags = soup.find_all('li', class_='ingredient')
+            instruction_tags = soup.find_all('p', class_='comp mntl-sc-block mntl-sc-block-html')
+        elif domain == 'www.epicurious.com':
+            ingredient_tags = soup.find_all('li', class_='ingredient')
+            instruction_tags = soup.find_all('p', class_='preparation_step')
+        elif domain == 'www.food.com':
+            ingredient_tags = soup.find_all('div', class_='recipe-ingredients__ingredient')
+            instruction_tags = soup.find_all('li', class_='recipe-directions__step')
+
+        if ingredient_tags and instruction_tags:
+            # make a list of Ingredient objects
+            ingredients = [self.parse_ingredient(
+                i.get_text().strip()) for i in ingredient_tags]
+            instructions = ''
+            # Make sure sentences are separated by a period to help spaCy out
+            for i in instruction_tags:
+                text = i.get_text().strip()
+                if not text.endswith('.'):
+                    text += '.'
+                instructions += text + ' '
+            # Replace all colons and semicolons with periods. spaCy seems to do 
+            # better when these are separate sentences.
+            instructions = instructions.replace(';', '.')
+            instructions = instructions.replace(':', '.')
+            return Recipe(ingredients, instructions, self.ureg, self.nlp)
+
+        if is_wordpress_recipe(soup):
+            return self.parse_wordpress_recipe(soup)
         else:
-            print('Recipe is not in WordPress Recipe Maker format')
+            print('unknown format')
 
-        def soup_find_all(tag, class_, soup):
-            return soup.find_all(tag, class_)
+    def is_wordpress_recipe(self, soup):
+        """
+        Return True if soup contains a WordPress recipe
 
-        def get_tasteofhome_ingredients(soup):
-            return soup.find('ul', 'recipe-ingredients__list').find_all('li')
+        Parameters:
+            soup: BeautifulSoup representation of webpage with recipe
+        Returns:
+            bool
+        """
+        ingr = 'wprm-recipe-ingredients-container'
+        inst = 'wprm-recipe-instructions-container'
+        if soup.find(class_=ingr) and soup.find(class_=inst):
+            return True
+        return False
 
-        def get_simplyrecipes_instructions(soup):
-            return soup.find(class_='recipe-method instructions').find_all('p')
+    def parse_wordpress_recipe(self, soup):
+        """
+        Read and interpret ingredients and instructions from a WordPress recipe
 
-        known_formats = {
-            'www.allrecipes.com': {
-                'ingredients':  partial(soup_find_all, 'span', 'ingredients-item-name'),
-                'instructions': partial(soup_find_all, 'li', 'instructions-section-item')},
-            'www.foodnetwork.com': {
-                'ingredients':  partial(soup_find_all, 'span', 'o-Ingredients__a-Ingredient--CheckboxLabel'),
-                'instructions': partial(soup_find_all, 'li', 'o-Method__m-Step')},
-            'www.tasteofhome.com': {
-                'ingredients':  get_tasteofhome_ingredients,
-                'instructions': partial(soup_find_all, 'li', 'recipe-directions__item')},
-            'www.simplyrecipes.com': {
-                'ingredients':  partial(soup.find_all, 'li', 'ingredient'),
-                'instructions': get_simplyrecipes_instructions},
-            'www.thespruceeats.com': {
-                'ingredients':  partial(soup_find_all, 'li', 'ingredient'),
-                'instructions': partial(soup_find_all, 'p', 'comp mntl-sc-block mntl-sc-block-html')},
-            'www.epicurious.com': {
-                'ingredients':  partial(soup_find_all, 'li', 'ingredient'),
-                'instructions': partial(soup_find_all, 'li', 'preparation_step')},
-            'www.food.com': {
-                'ingredients':  partial(soup_find_all, 'div', 'recipe-ingredients__ingredient'),
-                'instructions': partial(soup_find_all, 'li', 'recipe-directions__step')}
-        }
+        Parameters:
+            soup: BeautifulSoup representation of webpage with recipe
+        Returns:
+            Recipe object representation
+        """
+        ingredient_tags = soup.find_all('li', class_='wprm-recipe-ingredient')
+        instruction_tags = soup.find_all('div', class_='wprm-recipe-instruction-text')
 
-        
-        domain = url.split('/')[2]  # get what's between the second and third slashes
-        # if domain in known_formats:
+        ingredients, instructions = [], []
+
+        for tag in ingredient_tags:
+            amount = tag.find('span', class_='wprm-recipe-ingredient-amount')
+            unit = tag.find('span', class_='wprm-recipe-ingredient-unit')
+            name = tag.find('span', class_='wprm-recipe-ingredient-name')
+            notes = tag.find('span', class_='wprm-recipe-ingredient-notes')
+
+            amount, unit, name, notes = [attr.get_text().lower() if attr else None for attr in [amount, unit, name, notes]]
+
+            ingredients.append(Ingredient(amount, unit, name, notes, self.ureg, self.nlp))
+
+        instructions = ' '.join([tag.get_text() for tag in instruction_tags])
+
+        r = recipe.Recipe(ingredients, instructions, self.ureg, self.nlp)
+
+        return r
+
 
 # ---- Ingredient parsing -----------------------------------------------------
 
@@ -251,71 +311,6 @@ class RecipeParser:
             return Ingredient(quantity=qty_b, name=text, ureg=self.ureg, nlp=self.nlp)
         else:
             return Ingredient(quantity=qty_a, name=text, ureg=self.ureg, nlp=self.nlp)
-
-
-
-
-
-
-    def is_wordpress_recipe(self, soup):
-        """
-        Return True if soup contains a WordPress recipe
-
-        Parameters:
-            soup: BeautifulSoup representation of webpage with recipe
-        Returns:
-            bool
-        """
-        ingr = 'wprm-recipe-ingredients-container'
-        inst = 'wprm-recipe-instructions-container'
-        if soup.find(class_=ingr) and soup.find(class_=inst):
-            return True
-        return False
-
-    def parse_wordpress_recipe(self, soup):
-        """
-        Read and interpret ingredients and instructions from a WordPress recipe
-
-        Parameters:
-            soup: BeautifulSoup representation of webpage with recipe
-        Returns:
-            Recipe object representation
-        """
-        ingredient_tags = soup.find_all('li', class_='wprm-recipe-ingredient')
-        instruction_tags = soup.find_all('div', class_='wprm-recipe-instruction-text')
-
-        ingredients, instructions = [], []
-
-        for tag in ingredient_tags:
-            amount = tag.find('span', class_='wprm-recipe-ingredient-amount')
-            unit = tag.find('span', class_='wprm-recipe-ingredient-unit')
-            name = tag.find('span', class_='wprm-recipe-ingredient-name')
-            notes = tag.find('span', class_='wprm-recipe-ingredient-notes')
-
-            amount, unit, name, notes = [attr.get_text().lower() if attr else None for attr in [amount, unit, name, notes]]
-
-            ingredients.append(Ingredient(amount, unit, name, notes, self.ureg, self.nlp))
-
-        instructions = ' '.join([tag.get_text() for tag in instruction_tags])
-
-        r = recipe.Recipe(ingredients, instructions, self.ureg, self.nlp)
-
-        return r
-
-
-    def parse_allrecipes_recipe(self, soup):
-        ingredient_tags = soup.find_all('span', class_='ingredients-item-name')
-        instruction_tags = soup.find_all('li', class_='instructions-section-item')
-
-        ingredients = [i.get_text().strip() for i in ingredient_tags]
-        instructions = [i.find('p').get_text().strip() for i in instruction_tags]        
-
-        
-
-    def parse_foodcom_recipe(self, soup):
-        ingredient_tags = soup.find_all('div', class_='recipe-ingredients__ingredient')
-        'recipe-ingredients__ingredient-quantity'
-        'recipe-ingredients__ingredient-parts'
 
         
 

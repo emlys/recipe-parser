@@ -22,7 +22,6 @@ class Ingredient:
             ureg: pint.UnitRegistry instance, must be shared across all Ingredients
             nlp: spacy.Language object
         """
-        print(name)
         self.quantity = quantity
         self.name = name.strip()
         self.ureg = ureg
