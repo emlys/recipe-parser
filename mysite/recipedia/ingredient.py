@@ -32,12 +32,12 @@ class Ingredient:
         self.percent = 0
 
         # process the ingredient name into a spacy Span
-        # self.span = list(self.nlp(self.name).sents)[0]
+        self.span = list(self.nlp(self.name).sents)[0]
 
         # try to identify the key word in the ingredient name
         # should be the syntactically highest noun in the name
         # if no nouns are identified, guess the syntactic root
-        # self.base = spacy_helpers.get_top_noun(self.span) or self.span.root
+        self.base = spacy_helpers.get_top_noun(self.span) or self.span.root
 
 
     def has_words(self, words: str):
@@ -46,14 +46,13 @@ class Ingredient:
 
         e.g. the substring 'green pepper' matches the name 'green bell pepper'
         """
-        words = '.*'.join(words.split(' '))
-        pattern = re.compile(words)
-        match = re.search(pattern, self.name)
-        if match:
-            return True
-        else:
-            return False
+        words = words.split(' ')
+        for word in words:
+            if word not in self.name:
+                return False
+        return True
+
 
 
     def __repr__(self):
-        return self.name
+        return str(self.quantity.magnitude) + ':' + str(self.quantity.units) + ':' + self.name

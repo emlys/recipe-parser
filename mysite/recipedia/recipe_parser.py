@@ -1,16 +1,13 @@
-import argparse
 import pint
 import re
 import requests
 import spacy
-from functools import partial
-from fractions import Fraction
 from bs4 import BeautifulSoup
 
 from recipedia.ingredient import Ingredient
 from recipedia.recipe import Recipe
 
-
+headers = {'User-Agent': 'Mozilla/5.0 (compatible)'}
 class RecipeParser:
 
     def __init__(self):
@@ -37,8 +34,14 @@ class RecipeParser:
         """
         # get what's between the second and third slashes
         domain = url.split('/')[2]
-        page = requests.get(url)
-        soup = BeautifulSoup(page.text, 'lxml')
+        print(url)
+        print(url.split('/'))
+        print(domain)
+        print(domain == 'www.epicurious.com')
+        response = requests.get(url, headers=headers)
+        if response.status_code not in [200, 201]:
+            print(f'GET request to {url} failed: code {response.status_code}')
+        soup = BeautifulSoup(response.text, 'lxml')
 
         # because some of the formats use chained functions, it's not
         # convenient to implement a lazy dictionary.
@@ -46,44 +49,50 @@ class RecipeParser:
         ingredient_tags, instruction_tags = None, None
         if domain == 'www.allrecipes.com':
             ingredient_tags = soup.find_all('span', class_='ingredients-item-name')
-            instruction_tags = soup.find_all('li', class_='instructions-section-item')
+            instruction_tags = soup.find('ul', class_='instructions-section').find_all('p')
         elif domain == 'www.foodnetwork.com':
-            ingredient_tags = soup.find_all('span', class_='o-Ingredients__a-Ingredient--CheckboxLabel')
+            # first tag is 'select all' so remove it
+            ingredient_tags = soup.find_all('span', class_='o-Ingredients__a-Ingredient--CheckboxLabel')[1:]
             instruction_tags = soup.find_all('li', class_='o-Method__m-Step')
         elif domain == 'www.tasteofhome.com':
             ingredient_tags = soup.find('ul', class_='recipe-ingredients__list').find_all('li')
             instruction_tags = soup.find_all('li', class_='recipe-directions__item')
         elif domain == 'www.simplyrecipes.com':
             ingredient_tags = soup.find_all('li', class_='ingredient')
-            instruction_tags = soup.find(class_='recipe-method instructions').find_all('p')
+            instruction_tags = soup.find(class_='recipe-method').find_all('p')
         elif domain == 'www.thespruceeats.com':
             ingredient_tags = soup.find_all('li', class_='ingredient')
-            instruction_tags = soup.find_all('p', class_='comp mntl-sc-block mntl-sc-block-html')
+            instruction_tags = soup.find(class_='comp section--instructions section')
         elif domain == 'www.epicurious.com':
+            print(soup)
+            print(soup.find(class_='comp section--instructions section'))
             ingredient_tags = soup.find_all('li', class_='ingredient')
             instruction_tags = soup.find_all('p', class_='preparation_step')
         elif domain == 'www.food.com':
             ingredient_tags = soup.find_all('div', class_='recipe-ingredients__ingredient')
             instruction_tags = soup.find_all('li', class_='recipe-directions__step')
 
+        print(ingredient_tags, instruction_tags)
         if ingredient_tags and instruction_tags:
+            print('found tags')
             # make a list of Ingredient objects
             ingredients = [self.parse_ingredient(
                 i.get_text().strip()) for i in ingredient_tags]
-            instructions = ''
+            instructions_list = []
             # Make sure sentences are separated by a period to help spaCy out
             for i in instruction_tags:
                 text = i.get_text().strip()
                 if not text.endswith('.'):
                     text += '.'
-                instructions += text + ' '
+                instructions_list.append(text)
+            instructions = ' '.join(instructions_list)
             # Replace all colons and semicolons with periods. spaCy seems to do 
             # better when these are separate sentences.
             instructions = instructions.replace(';', '.')
             instructions = instructions.replace(':', '.')
             return Recipe(ingredients, instructions, self.ureg, self.nlp)
 
-        if is_wordpress_recipe(soup):
+        if self.is_wordpress_recipe(soup):
             return self.parse_wordpress_recipe(soup)
         else:
             print('unknown format')
@@ -134,6 +143,8 @@ class RecipeParser:
         return r
 
 
+
+
 # ---- Ingredient parsing -----------------------------------------------------
 
     def parse_ingredient(self, text):
@@ -143,7 +154,12 @@ class RecipeParser:
         Returns:
             Ingredient object
         """
-
+        # Valid number formats:
+        # integer: '2'
+        # decimal: '1.5'
+        # fraction: '1/3', '⅓'
+        # mixed fraction: '2 1/2', '2 and 1/2', '2-1/2', '2½', '2 ½', '2 and ½', '2-½'
+        print('ingredient:', text)
         # multi-character equivalents for fraction characters
         unicode_fracs = {
             '½': '1/2',
@@ -159,172 +175,80 @@ class RecipeParser:
 
         # Replace any unicode fractions with normal fractions
         for char, replacement in unicode_fracs.items():
-            text = re.sub(f' ?{char}', f' {replacement}', text)
+            text = re.sub(f'\s?{char}', f' {replacement}', text)
         text = text.strip()
 
+
         # define some regular expressions to help identify numbers
-        integer = '\d+'
+        integer = '(\d+)'
         fraction = f'{integer}/{integer}'
-        # an integer and a fraction separated by ' ' or ' and '
-        mixed_fraction = f'{integer} (and )?{fraction}'
-        decimal = f'{integer}\.{integer}'
-        number = f'{mixed_fraction}|{fraction}|{decimal}|{integer}'
+        # an integer and a fraction separated by ' ' or ' and ' or '-'
+        # '-' can also be a range, but if it's an integer followed by a
+        # fraction, it's safe to assume it's a mixed fraction.
+        mixed_fraction = f'{integer}(?: | and |-)?{fraction}'
+        decimal = f'({integer}\.{integer})'
+        # letter, hyphen, or period
+        word = '[a-zA-Z-\.]+'
+        word = '\S+'
 
 
-        word = '\D+'
-        # two numbers separated by a dash, possibly with spaces, or ' to '
-        qty_range = f'({number})( ?- ?| to )({number})'
 
-        # quantity with alternate measurement in parentheses e.g. '2 cups (226g)'
-        qty_alt = f'({number})({word})\(({number})({word})\)'
-        # TODO: handle nested alternate and range e.g. '2-3 cups (226-360g)'
+        number_parse = {
+            integer: lambda match: float(match[1]),
+            decimal: lambda match: float(match[1]),
+            fraction: lambda match: float(match[1]) / float(match[2]),
+            mixed_fraction: lambda match: float(match[1]) + float(match[2]) / float(match[3])
 
-
-        # First check for alternate measurement format
-        match = re.match(re.compile(f'{qty_alt}(.+)'), text)
-        if match:
-            return self.parse_qty_alt(match[1], match[3], match[4], match[6], match[7])
-
-        # If that doesn't match, check for range format
-        match = re.match(re.compile(f'{qty_range}(.+)'), text)
-        if match:
-            return self.parse_qty_range(match[1], match[4], match[6])
-
-        # If that doesn't match, check for simple format
-        match = re.match(re.compile(f'({number})(.+)'), text)
-        if match:
-            return self.parse_simple_qty(match[1], match[3])
-
-        # If that doesn't match, use the unitless format
-        return Ingredient(quantity=self.ureg.Quantity(0), name=text, ureg=self.ureg, nlp=self.nlp)
+        }
 
 
-    def parse_number(self, phrase):
-        """Parse a number phrase into a float.
-        Args:
-            phrase (string): representation of a numeric value. Accepts:
-                integers e.g. '2'; fractions e.g. '1/3'; decimals e.g. '1.5';
-                mixed fractions e.g. '1 1/3' or '1 and 1/3'
-        Returns:
-            float
-        """# define some regular expressions to help identify numbers
-        integer = '\d+'
-        decimal = f'{integer}\.{integer}'
-        fraction = f'({integer})/({integer})'
-        # an integer and a fraction separated by ' ' or ' and '
-        mixed_fraction = f'({integer}) (and )?{fraction}'
-        number = f'{mixed_fraction}|{fraction}|{decimal}|{integer}'
+        def match_number(pattern, text):
+            for num_pattern in [mixed_fraction, fraction, decimal, integer]:
+                match = re.match(re.compile(pattern.format(num_pattern=num_pattern, word=word)), text)
+                if match:
+                    magnitude = number_parse[num_pattern](match)
+                    try:  # try to parse the word as a unit
+                        units = self.ureg.Unit(match['unit'].lower())
+                        quantity = magnitude * units
+                        remainder = match['tail']
+                    except:  # if it's not a unit, return a unitless Quantity
+                        quantity = self.ureg.Quantity(magnitude)
+                        remainder = match['remainder']
+                    return quantity, remainder
+            return None, None
 
-        match = re.match(re.compile(mixed_fraction), phrase)
-        if match:
-            return float(match[1]) + float(match[3]) / float(match[4])
-        match = re.match(re.compile(fraction), phrase)
-        if match:
-            return float(match[1]) / float(match[2])
-        return float(phrase)
+        quantity_a, remainder_a = match_number(
+            '{num_pattern} ?(?P<remainder>(?P<unit>{word}) ?(?P<tail>.*))',
+             text)
+        if not quantity_a:
+            return Ingredient(self.ureg.Quantity(0), text, self.ureg, self.nlp)
 
-    def parse_expression(self, number, word):
-        """Wrapper around ureg.parse_expression to handle non-units.
-        Args:
-            number (float): amount of ingredient
-            word (string): single word following the number that may or may 
-                not be a unit, e.g. '2 *eggs*'; '2 *cups*'
-        Returns:
-            pint.Quantity with magnitude = number, 
-                units = word if word is a unit, otherwise unitless.
-        """
-        
-        try:
-            # try to parse the word as a unit
-            return number * self.ureg.parse_expression(word)
-        except pint.errors.UndefinedUnitError:
-            # if it's not a unit, return a unitless quantity, and keep the word separate
-            return self.ureg.Quantity(number)
+        # match against range format
+        quantity_b, remainder_b = match_number(
+            '(?:- ?|to ){num_pattern} ?(?P<remainder>(?P<unit>{word})(?P<tail>.*))',
+             remainder_a)
+        if quantity_b:
+            # i want to know if this ever isn't dimensionless
+            assert quantity_a.dimensionless
+            # if the measurement is given as a range, use the average
+            avg_quantity = self.ureg.Quantity(
+                (quantity_a.magnitude + quantity_b.magnitude) / 2,
+                quantity_b.units
+            )
+            return Ingredient(avg_quantity, remainder_b, self.ureg, self.nlp)
 
-    def parse_simple_qty(self, num_a, text):
-        """Parse a simple ingredient phrase to an Ingredient.
-        Args:
-            num_a (string): representation of the first number e.g. '1.5'
-            text (string): remaining text of the ingredient phrase
-        Returns:
-            Ingredient object
-        """
-        words = text.split()
-        head, tail = words[0], ' '.join(words[1:])
-        float_a = self.parse_number(num_a)
-        qty = self.parse_expression(float_a, head)
+        # match against alternate measurement format
+        quantity_c, remainder_c = match_number(
+            ' ?\(({num_pattern}) ?(?P<unit>{word})?\)(?P<tail>(?P<remainder>.*))', 
+            remainder_a)
+        if quantity_c:
+            # prefer measurements of mass; otherwise use the first measurement
+            if (str(quantity_c.dimensionality) == '[mass]' and
+                str(quantity_a.dimensionality) != '[mass]'):
+                return Ingredient(quantity_c, remainder_c, self.ureg, self.nlp)
+            else:
+                return Ingredient(quantity_a, remainder_c, self.ureg, self.nlp)
 
-        if str(qty.units) == 'dimensionless':
-            return Ingredient(quantity=qty, name=text, ureg=self.ureg, nlp=self.nlp)
-        else:
-            return Ingredient(quantity=qty, name=tail, ureg=self.ureg, nlp=self.nlp)
-
-
-    def parse_qty_range(self, num_a, num_b, text):
-        """Parse an ingredient phrase with a quantity range to an Ingredient
-        Args:
-            num_a (string): representation of the first number e.g. '1.5'
-            num_b (string): representation of the first number e.g. '1.5'
-            text (string): remaining text of the ingredient phrase
-        Returns:
-            Ingredient object
-        """
-        words = text.split()
-        head, tail = words[0], ' '.join(words[1:])
-
-        # Take the average of the range
-        float_a, float_b = self.parse_number(num_a), self.parse_number(num_b)
-        avg = (float_a + float_b) / 2
-
-        qty = self.parse_expression(avg, head)
-        if str(qty.units) == 'dimensionless':
-            return Ingredient(quantity=qty, name=text, ureg=self.ureg, nlp=self.nlp)
-        else:
-            return Ingredient(quantity=qty, name=tail, ureg=self.ureg, nlp=self.nlp)
-
-    def parse_qty_alt(self, num_a, word_a, num_b, word_b, text):
-        """ Parse an ingredient phrase with alternate quantity to an Ingredient
-
-        Prefers units of mass over other dimensionalities; otherwise prefers
-        the first quantity. E.g.
-            '2 cups (226g) flour, sifted' -> 
-                Ingredient(Quantity(226, 'grams'), 'flour, sifted')
-            '5 cups (1 package) noodles' ->
-                Ingredient(Quantity(5, 'cups'), 'noodles')
-        Args:
-            num_a (string): representation of the first number e.g. '1.5', '1 1/2'
-            word_a (string): word following the first number; may or may not be a unit
-            num_b (string): representation of the alternate number e.g. '1.5', '1 1/2'
-            word_b (string): word following the alternate number; may or may not be a unit
-            text (string): remaining ingredient text
-        Returns:
-            Ingredient object storing one of the two quantities and remaining text
-        """
-        float_a, float_b = self.parse_number(num_a), self.parse_number(num_b)
-        qty_a = self.parse_expression(float_a, word_a)
-        qty_b = self.parse_expression(float_b, word_b)
-
-        # If the second quantity measures mass and the first doesn't, use the
-        # second one. Otherwise use the first.
-        if (str(qty_a.units.dimensionality) != '[mass]' and 
-            str(qty_b.units.dimensionality) == '[mass]'):
-            return Ingredient(quantity=qty_b, name=text, ureg=self.ureg, nlp=self.nlp)
-        else:
-            return Ingredient(quantity=qty_a, name=text, ureg=self.ureg, nlp=self.nlp)
-
-        
-
-
-def main():
-    """Entrypoint for recipe parser"""
-
-    # parse command line args
-    parser = argparse.ArgumentParser()
-    parser.add_argument('url', help='URL of recipe to parse')
-    args = parser.parse_args()
-
-    RecipeParser().parse(args.url)
-
-
-if __name__ == '__main__':
-    main()
+        return Ingredient(quantity_a, remainder_a, self.ureg, self.nlp)
+    
+    

@@ -39,6 +39,7 @@ class Recipe:
         self.ureg = ureg
         self.nlp = nlp
 
+        print(self.ingredients)
         self.normalize_ingredients()
 
         self.ingredient_nodes = []
@@ -54,8 +55,7 @@ class Recipe:
         # at the time they are instantiated.
         self.graph = self.initialize_graph()
 
-        for node in self.order:
-            print(node.index)
+        self.graph_surface = self.graph.copy()
 
         self.containers = []
 
@@ -66,9 +66,6 @@ class Recipe:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
 
-        for node in self.order:
-            print(node.index)
-        # self.visualize()
 
 
     def initialize_graph(self) -> list:
@@ -103,40 +100,90 @@ class Recipe:
         #displacy.serve(head)
 
         # Most steps in recipes are commands
-        # Ideally spacy will have identified the instruction verb as the sentence root
-        if head.root.pos_ == 'VERB':
+        # Ideally spacy will have identified the imperative verb as the sentence root
+        if self.is_imperative(head.root):
+            
+            objs = sh.get_objects(head.root)
+            print(head.root, objs)
 
-            action = head.root
-            nouns = sh.get_all_nouns(sent)
-            ingredient_nodes, containers = self.identify_objects(nouns)
-     
-            if ingredient_nodes:
-                node = Node(self.node_index, head, action, ingredient_nodes)
-                self.node_index += 1
-                self.add_new_node(node)
-            elif containers:
-                self.current_ref = containers[0]
+            if objs:
+                nodes = []
+                for o in objs:
+                    identity = self.identify_object(o)
+                    if identity:
+                        nodes.append(identity)
+
+                # nouns = sh.get_all_nouns(sent)
+
+                # ingredient_nodes, containers = self.identify_objects(nouns)
+         
+                # 
+                if nodes:
+                    new_node = Node(self.node_index, head, head.root, nodes)
+                    self.node_index += 1
+                    self.add_new_node(new_node)
+                    self.current_ref = new_node
+
+                # otherwise, the object of the sentence isn't a node
+
             else:
                 if isinstance(self.current_ref, Node):
-                    node = Node(self.node_index, head, action, [self.current_ref])
+                    new_node = Node(self.node_index, head, head.root, [self.current_ref])
                     self.node_index += 1
-                    self.add_new_node(node) 
+                    self.add_new_node(new_node) 
 
 
         else:
-            head = list(self.nlp(head.text + '.').sents)[0]
-            nouns = [n.root for n in head.noun_chunks]
-
-            ingredient_nodes, containers = self.identify_objects(nouns)
-
-            if ingredient_nodes:
-                node = Node(self.node_index, None, head, ingredient_nodes)
-                self.node_index += 1
-                self.add_new_node(node)
+            pass
 
 
         if tail:
                 self.parse_steps(tail)
+
+
+    def is_imperative(self, token):
+        """Check if a token is an imperative verb.
+        It is imperative if the POS tag is the infinitive (VB) and
+        the token has no subject.
+
+        Args:
+            token (spacy.Token): token to check
+        Returns:
+            boolean: True if imperative, False if not
+        """
+        if (token.tag_ == 'VB' and 
+                sum([child.dep_ == 'nsubj' for child in token.children]) == 0):
+            return True
+        return False
+
+    def identify_object(self, token):
+
+        print('token:', token)
+        if token.text in {'oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan', 'foil'}:
+            return None
+
+        name = []
+        for child in token.children:
+            if child.dep_ == 'compound' or child.dep_ == 'amod':
+                # a compound noun
+                name.append(child.text)
+
+        name.append(token.text)
+        name = ' '.join(name)
+
+        matches = []
+        for node in self.graph_surface:
+            for ingredient in node.ingredients:
+                if ingredient.has_words(name):
+                    matches.append(node)
+                    break
+        print(name, 'matches:')
+        for m in matches:
+            print(m)
+        return matches[0]
+
+
+
 
     def add_new_node(self, node):
         """
@@ -146,99 +193,26 @@ class Recipe:
             node: a Node to insert
         """
         self.graph.append(node)
+        self.graph_surface.append(node)
         for parent in node.parents:
             try:
-                self.graph.remove(parent)
+                self.graph_surface.remove(parent)
             except:
                 pass
 
         self.order.append(node)
         self.current_ref = node
 
-    def visualize(self):
-        """Display the recipe as a tree graph with matplotlib"""
-
-        plt.figure(figsize = (8, 10))
-
-        panel = plt.axes([0.1, 0.1, 0.7, 0.7], frameon=False)
-
-        panel.set_xlim(-1, len(self.ingredients))
-        panel.set_ylim(-1, len(self.order) + 1)
-
-        # turn off tick marks and labels
-        panel.tick_params(
-            bottom=False,
-            labelbottom=False,
-            left=False,
-            labelleft=False
-        )
-
-        # plot each ingredient as a node labeled with its name
-        for i, ing in enumerate(self.ingredient_nodes):
-            plt.plot(
-                i,
-                len(self.order),
-                marker='o',
-                markerfacecolor='green',
-                markeredgewidth=0,
-                markersize=8,
-                linewidth=0,
-            )
-            plt.text(
-                i,
-                len(self.order),
-                ' ' + ing.ingredients[0].name,
-                verticalalignment='bottom',
-                rotation=60
-            )
-            ing.x = i
-            ing.y = len(self.order)
-
-        # plot each recipe step as a node labeled with its action
-        for i, node in enumerate(self.order):
-
-            node.x = sum(p.x or 0 for p in node.parents) / len(node.parents)
-            node.y = len(self.order) - 1 - i
-
-            plt.plot(
-                node.x,
-                node.y,
-                marker='o',
-                markerfacecolor='green',
-                markeredgewidth=0,
-                markersize=8,
-                linewidth=0,
-            )
-
-            plt.text(
-                node.x,
-                node.y,
-                ' ' + node.action.text.split(' ')[0]
-            )
-
-            # plot lines connecting child nodes to parent nodes
-            for parent in node.parents:
-                plt.plot(
-                    [parent.x, node.x],
-                    [parent.y, node.y],
-                    markersize=0,
-                    linewidth=2
-                )
-
-        plt.show()
-
 
 
     def best_matching_node(self, token):
 
-        scores = [node.max_base_similarity(token) for node in self.graph]
+        scores = [node.max_base_similarity(token) for node in self.graph_surface]
         if max(scores) >= 0.7:
             # return the node with the highest score
-            match = self.graph[np.argmax(np.array(scores))]
-            print(token, 'matches', match.ingredients)
+            match = self.graph_surface[np.argmax(np.array(scores))]
         else:
             # if all the scores are low, the token likely isn't an ingredient
-            print(token, 'matches nothing')
             return None
 
 
@@ -265,9 +239,6 @@ class Recipe:
         Returns:
             list of Nodes that the token may refer to
         """
-        print(token.text)
-        print('lemma:', token.lemma_)
-        print([t.text for t in token.subtree])
         keyword = token.lemma_
         if self.is_kitchen_equipment(keyword):
             for container in self.containers:
@@ -280,7 +251,7 @@ class Recipe:
 
         else:
             matches = []
-            for n in self.graph:
+            for n in self.graph_surface:
                 for i in n.ingredients:
                     if i.has_words(keyword):
                         matches.append(n)
@@ -295,7 +266,7 @@ class Recipe:
         self.containers.append(container)
 
     def is_kitchen_equipment(self, word: str):
-        kitchen_equipment = ['oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan']
+        kitchen_equipment = {'oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan'}
         if word in kitchen_equipment:
             return True
         return False
