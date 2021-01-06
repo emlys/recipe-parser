@@ -18,10 +18,10 @@ html {
 }
 
 .bottom {
-    display: flex;
+/*    display: flex;
     justify-content: space-around;
     flex-direction: row;
-    align-items: center;
+    align-items: center;*/
     height: 50%;
     width: 100%;
     margin: 1em;
@@ -30,8 +30,18 @@ html {
 .recipe {
     display: flex;
     flex-direction: column;
-    width: 40%;
-    height: 50%;
+    width: 50%;
+    height: 100%;
+}
+
+.graph {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+}
+
+.recipe-steps {
     background-color: #fffcea;
     border: 4px solid black;
     border-radius: 10px;
@@ -48,6 +58,20 @@ h2 {
     justify-content: center;
     font-size: 1.5em;
     margin: 0.2em;
+}
+
+.path {
+    position: relative;
+}
+
+.node {
+    width: 15px;
+    height: 15px;
+    position: relative;
+}
+
+.node-label {
+    z-index: 10;
 }
 
 .search-bar {

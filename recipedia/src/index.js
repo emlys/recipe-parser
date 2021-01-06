@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-import RecipeTree from './tree.jsx';
+import Recipe from './tree.jsx';
 
 
 
@@ -16,7 +16,6 @@ class SearchBar extends React.Component {
     render() {
         return (
             <form className="search-container" onSubmit={ this.props.handleSubmit }>
-            
                 <input 
                     id="search_bar" 
                     className="search-bar"
@@ -34,31 +33,8 @@ class SearchBar extends React.Component {
     }
 }
 
-class Recipe extends React.Component {
-
-    render() {
-        console.log(this.props)
-        const steps = this.props.steps.map(
-            (step, index) => <li key={index}>{step}</li>);
-        console.log('steps:');
-        console.log(steps);
-        return (
-            <div className="recipe" id="recipe_container">
-                 <h3>Recipe</h3>
-                 <ul>{steps}</ul>
-            </div>
-        )
-    }
-}
 
 
-class Tree extends React.Component {
-
-    render() {
-       return <RecipeTree />
-        
-    }
-}
 
 
 class Recipedia extends React.Component {
@@ -67,7 +43,8 @@ class Recipedia extends React.Component {
         this.state = {
             value: '',
             nodes: [],
-            steps: []
+            steps: [],
+            ingredients: []
         }
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -84,9 +61,10 @@ class Recipedia extends React.Component {
         fetch(search_url + this.state.value)
         .then(res => res.json())
         .then(json => {
-            this.setState({'nodes': json.recipe});
-            const steps = json.recipe.map((item) => item.instruction);
-            this.setState({'steps': steps});
+            this.setState({'ingredients': json.ingredients});
+            this.setState({'nodes': json.steps});
+            const steps = json.steps.map((item) => item.instruction);
+            this.setState({'steps': json.steps});
         });
     }
 
@@ -95,15 +73,15 @@ class Recipedia extends React.Component {
             <div className="page">
                 <h1 className="header">Recipedia</h1>
                 <h2>a recipe synthesizer</h2>
+                <div style={{position: 'absolute'}} left='100px' right='0px'>XX</div>
                 <SearchBar 
                     value={this.state.value}
                     handleChange={this.handleChange}
                     handleSubmit={this.handleSubmit} />
                 <div className="bottom">
                     <Recipe 
+                        ingredients={this.state.ingredients}
                         steps={this.state.steps}/>
-                    <RecipeTree
-                        nodes={this.state.nodes}/>
                 </div>
             </div>
         )

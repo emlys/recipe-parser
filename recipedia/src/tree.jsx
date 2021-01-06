@@ -1,17 +1,16 @@
+import './index.css';
+import React, { useState, useCallback } from 'react';
+
+
 var Bezier = require('paths-js/bezier');
-var React = require('react');
-var ducks = require('./ducks.json');
 
 
 function children(x) {
   return x.parents || []
 }
 
-
-
 function averageXCoords(array) {
-    console.log(array)
-    var sum = array.reduce(function(a, b){
+    var sum = array.reduce(function(a, b) {
         return a + b.point[0];
     }, 0);
     // const sum = array.reduce((accumulator, current) => {accumulator + current}, 0);
@@ -19,7 +18,6 @@ function averageXCoords(array) {
 }
 
 function numberOfIngredients(nodes) {
-    console.log(nodes);
     return nodes.reduce((acc, node) => {
         console.log(node.parents.length);
         if (node.parents.length === 0) {
@@ -39,122 +37,402 @@ function mapNamesToNodes(nodes) {
     return nodeMap;
 }
 
-/**
- * Calculate pixel coordinates for each node in the tree.
- * @param nodes: an array of Nodes
- * @param height: the height in pixels of the whole SVG area
- * @param width: the width in pixels of the whole SVG area
-*/
-function setNodeCoords(nodes, height, width) {
 
-  let nodeMap = mapNamesToNodes(nodes);
+// /**
+//  * Calculate pixel coordinates for each node in the tree.
+//  * @param nodes: an array of Nodes
+//  * @param height: the height in pixels of the whole SVG area
+//  * @param width: the width in pixels of the whole SVG area
+// */
+function setNodeCoords(ingredientNodes, stepNodes, height, width) {
+
+  let nodeMap = new Map();
+  // let nodeMap = mapNamesToNodes(nodes);
   // the number of rows in the final tree graph
   // all ingredients go in the first row
   // after that, one row per step
   let xCoord, yCoord;
-
-  const nIngredients = numberOfIngredients(nodes);
-  const nRows = nodes.length - nIngredients + 1;
+ 
+  // const nRows = nodes.length - nIngredients + 1;
 
   // calculate the horizontal and vertical spacing between nodes
-  const xGap = (width - 20) / nIngredients;
-  const yGap = (height - 20) / nRows;
-  console.log('gaps:', xGap, yGap, height, width, nIngredients, nRows, )
+  const xGap = (width - 20) / ingredientNodes.length;
+  const yGap = (height - 20) / (stepNodes.length + 1);
+  console.log('gaps:', xGap, yGap, height, width, ingredientNodes.length, stepNodes.length)
 
-  let ingredientNodes = nodes.slice(0, nIngredients).map(
+  let ingredientNodesWithPoints = ingredientNodes.map(
       (node, index) => {
           xCoord = (index * xGap) + 10 ;
-          console.log(index, xGap, xCoord);
           yCoord = 10;
           node.point = [xCoord, yCoord];
           nodeMap.set(node.name, node);
           return node;
       }
   );
-  let stepNodes = nodes.slice(nIngredients, nodes.length).map(
+  let stepNodesWithPoints = stepNodes.map(
       (node, index) => {
           // evenly space the node horizontally between its parent nodes
           xCoord = averageXCoords(node.parents.map(parent => nodeMap.get(parent)));
-          console.log(index, nIngredients, yGap);
           yCoord = (index + 1) * yGap + 10;
           node.point = [xCoord, yCoord];
           nodeMap.set(node.name, node);
           return node;
       }
   );
-  return ingredientNodes.concat(stepNodes);
+  return ingredientNodesWithPoints.concat(stepNodesWithPoints);
+}
+
+// window size controls text position
+// ingredient and step text position controls position of nodes
+// node position controls position of edges
+
+
+
+// class Ingredient extends React.Component {
+
+//     constructor(props) {
+//       super(props);
+//       this.ref = React.createRef();
+//     }
+
+//     render() {
+//         console.log('rendering ingredient');
+//         console.log('position', this.props.position)
+//         console.log('bounding box:', this.ref.current.getBoundingClientRect());
+//         return (
+//             <React.Fragment>
+//               <foreignObject 
+//                   height="20px" 
+//                   width="300px"
+//                   transform={"translate(0," + this.props.position[1] + ")"}>
+//                       <div key={this.props.key}>{this.props.text}</div>
+//               </foreignObject>
+//               <Node
+//                   label={this.props.text}
+//                   transform={"translate(300," + (this.props.position[1] + 10) + ")"} />
+//             </React.Fragment>
+//         );
+//     }
+// }
+
+function Ingredient(props) {
+
+  const measuredRef = useCallback(node => {    
+    if (node !== null) {
+      props.updateFunc(node.getBoundingClientRect(), props.index);
+    }  
+  }, []);
+
+  console.log('props:', props);
+  return (
+    <React.Fragment>
+    <div ref={measuredRef}>{props.text}</div>
+    <svg>
+      <circle fill="white" stroke="black" r="5" transform={"translate(" + props.boundingBox.right + ",30)"}/>
+    </svg>
+    </React.Fragment>
+  )
+}
+
+function MeasureExample(props) {
+  const [height, setHeight] = useState(0);
+
+  const measuredRef = useCallback(node => {    
+    if (node !== null) {
+      props.updateFunc(node.getBoundingClientRect());
+    }  
+  }, []);
+  console.log('props:', props);
+  return (
+    <React.Fragment>
+      <h1 ref={measuredRef}>Hello, world</h1> 
+      <h2>The above header is {Math.round(props.boundingBox.height)}px tall</h2>
+      <svg>
+        <circle fill="white" stroke="black" r="5" transform={"translate(" + props.boundingBox.right + ",30)"}/>
+      </svg>
+    </React.Fragment>
+  );
+}
+
+class IngredientsSection extends React.Component {
+
+    constructor(props) {
+      super(props);
+      console.log('in constructor with props:', props);
+      this.testref = React.createRef();
+      this.state = {
+        boundingBox: {right: 0, top: 0},
+        boundingBoxes: {}
+      };
+      console.log('state:', this.state);
+      this.updateDimensions = this.updateDimensions.bind(this);
+    }
+
+    updateDimensions1(i) {
+      console.log('setting dimensions:', i);
+      this.setState({boundingBox: i});
+    }
+
+    updateDimensions(bbox, index) {
+      console.log('updating index ' + index + ' of boundingBoxes');
+      var bboxes = this.state.boundingBoxes;
+      bboxes[index] = bbox;
+      this.setState({boundingBoxes: bboxes});
+    }
+
+    // render() {
+    //     console.log('ingredients', this.props.ingredients);
+    //     const ingredients = this.props.ingredients.map((ingredient, index) => {
+    //         return (
+    //               <Ingredient 
+    //                   key={index} 
+    //                   text={ingredient.ingredients[0]}
+    //                   position={[0, index * 20]}
+    //                   transform={"translate(0," + index * 20 + ")"} />)
+    //     });
+    //     return (
+    //         <React.Fragment>
+    //           <g transform={"translate(" + this.props.position[0] + "," + this.props.position[1] + ")"}>
+    //             {ingredients}
+    //           </g>
+    //         </React.Fragment>
+    //     )
+    // }
+    render() {
+      console.log('rendering ingredientssection...');
+      console.log(this.props);
+      console.log(this.state);
+
+      const measuredRef = node => {
+          if (node !== null) {      
+            this.setState({boundingBox: node.getBoundingClientRect()});
+          }  
+      };
+
+      const ingredients = this.props.ingredients.map((ingredient, index) => {
+        console.log(ingredient, index);
+        if (this.state.boundingBoxes)
+        return (
+          <Ingredient
+            updateFunc={this.updateDimensions} 
+            boundingBox={this.state.boundingBoxes[index] || {'right': 0}}
+            text={ingredient.ingredients[0]}
+            index={index} />
+
+        );
+      });
+      return (
+        <React.Fragment>{ingredients}</React.Fragment>
+      );
+  }
 }
 
 
-// Node type:
-// {
-//  name: string,
-//  instruction: string,
-//  ingredients: list[string],
-//  parents: list[int]
-//}
+class Step extends React.Component {
+
+    getTextWidth(text, font) {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+
+      context.font = font || getComputedStyle(document.body).font;
+
+      console.log(context.font);
+
+      return context.measureText(text).width;
+    }
+
+
+    render() {
+      return (
+        <React.Fragment>
+          <foreignObject
+            height="20px"
+            width="500px"
+            transform={"translate(0," + this.props.position[1] + ")"}>
+              <div key={this.props.key}>{this.props.text}</div>
+          </foreignObject>
+        </React.Fragment>
+      );
+    }
+}
+
+
+class StepsSection extends React.Component {
+
+    render() {
+        const steps = this.props.steps.map((step, index) => 
+            <Step 
+              key={index} 
+              text={step.instruction}
+              position={[0, index * 20]} />
+        );
+        return (
+            <React.Fragment>
+              <g transform={"translate(" + this.props.position[0] + "," + this.props.position[1] + ")"}>
+                 {steps}
+              </g>
+            </React.Fragment>
+        );
+    }
+}
+
+class Recipe extends React.Component {
+
+    constructor(props) {
+      super(props);
+      this.state = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        coord: 0
+      };
+      this.updateDimensions = this.updateDimensions.bind(this);
+    }
+
+    componentDidMount() {
+      window.addEventListener('resize', this.updateDimensions);
+    }
+
+    updateDimensions() {
+      console.log('updating dimensions:', window.innerWidth, window.innerHeight);
+      this.setState({width: window.innerWidth, height: window.innerHeight});
+    }
+
+    render() {
+        console.log('rerendering...');
+        return (
+            <React.Fragment>
+            <div className="recipe" id="recipe_container">
+                <IngredientsSection 
+                      position={[0, 0]}
+                      height={this.props.ingredients.length * 20}
+                      ingredients={this.props.ingredients} />
+            </div>
+            </React.Fragment>
+        )
+    }
+}
+
+
+
+class NodeLabel extends React.Component {
+  render() {
+    if (this.props.show) {
+      console.log('rendering label');
+      const divStyle = {
+        whiteSpace: 'pre-line'
+      }
+      return (
+        <foreignObject className="node-label" transform="translate(10,-10)" width="20em" height="10em">
+          <div style={divStyle}>{this.props.label}</div>
+        </foreignObject>
+      )
+    } else {
+      console.log('rendering empty');
+      return <div></div>
+    }
+  }
+}
+
+class Node extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      showLabel: false
+    }
+    this.toggleLabel = this.toggleLabel.bind(this);
+    this.mouseEnter = this.mouseEnter.bind(this);
+    this.mouseLeave = this.mouseLeave.bind(this)
+  }
+
+  toggleLabel() {
+    console.log('toggle');
+    this.setState({showLabel: !this.state.showLabel});
+  }
+
+  mouseEnter() {
+    this.setState({showLabel: true});
+  }
+
+  mouseLeave() {
+    this.setState({showLabel: false});
+  }
+
+  render() {
+    return (
+      <React.Fragment>
+          <g 
+            transform={this.props.transform}
+            onMouseEnter={this.mouseEnter}
+            onMouseLeave={this.mouseLeave}
+            >
+            <circle fill="white" stroke="black" r="5" cx="0" cy="0"/>
+            <NodeLabel 
+              show={this.state.showLabel}
+              label={this.props.label} />
+          </g>
+      </React.Fragment>
+    )
+  }
+}
+
+class Edge extends React.Component {
+
+  render() {
+    const bezier = Bezier({points: [this.props.start, this.props.end]})
+    return <path d={ bezier.path.print() } fill="none" stroke="gray" />
+  }
+}
 
 class RecipeTree extends React.Component {
 
 
   constructor(props) {
     super(props);
-    this.buildEdges = this.buildEdges.bind(this);
+    this.buildPaths = this.buildPaths.bind(this);
   }
 
   /**
-   * Given a list of nodes, make a Bezier curve representing each edge
+   * Given a list of nodes, make a path for each edge between them
    */
-  buildEdges(nodes) {
-    var beziers = nodes.reduce((acc, node) => {
+  buildPaths(nodes) {
+    var edges = nodes.reduce((acc, node) => {
         // make a connector edge between the node and each of its parents
         const incomingEdges = node.parents.map((parent) => {
-            console.log([nodes[parent].point, node.point]);
-            var bezier = Bezier({
-                points: [nodes[parent].point, node.point]
-            });
-            return bezier;
+            return (
+              <Edge 
+                start={nodes[parent].point} 
+                end={node.point} />);
         });
         return acc.concat(incomingEdges);
     }, []);
-    return beziers;
+    return edges;
   }
 
   render() {
 
-    let {nodes,} = this.props;
+    console.log('nodes:', this.props);
 
-    setNodeCoords(nodes, 380, 500);
+    setNodeCoords(this.props.ingredientNodes, this.props.stepNodes, 380, 500);
 
-    const edges = this.buildEdges(nodes);
+    const paths = this.buildPaths(this.props.ingredientNodes.concat(this.props.stepNodes));
 
-    var paths = edges.map(function(c) {
-      return <path d={ c.path.print() } fill="none" stroke="gray" />
-    })
-
-    var circles = nodes.map(function(n) {
-      console.log('plotting at', n.point);
-      var position = "translate(" + n.point[0] +"," + n.point[1]  +")";
-
-
+    var circles = this.props.ingredientNodes.concat(this.props.stepNodes).map(function(n) {
       return (
-        <g transform={ position }>
-          <circle fill="white" stroke="black" r="5" cx="0" cy="0"/>
-        </g>
-      )
+        <Node 
+          transform={"translate(" + n.point[0] + "," + n.point[1] + ")"}
+          label={n.ingredients.join('\n')} />)
     })
 
     return (
       <div id="tree">
         <svg width="500" height="380">
-          <g>
-            { paths }
-            { circles }
-          </g>
+          { paths }
+          { circles }
         </svg>
       </div>
     )
   }
 }
 
-export default RecipeTree;
+export default Recipe;
