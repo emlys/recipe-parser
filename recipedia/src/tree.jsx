@@ -126,32 +126,9 @@ function Ingredient(props) {
   console.log('props:', props);
   return (
     <React.Fragment>
-    <div ref={measuredRef}>{props.text}</div>
-    <svg>
-      <circle fill="white" stroke="black" r="5" transform={"translate(" + props.boundingBox.right + ",30)"}/>
-    </svg>
+    <div style={{margin: '5px'}} ref={measuredRef}>{props.text}</div>
     </React.Fragment>
   )
-}
-
-function MeasureExample(props) {
-  const [height, setHeight] = useState(0);
-
-  const measuredRef = useCallback(node => {    
-    if (node !== null) {
-      props.updateFunc(node.getBoundingClientRect());
-    }  
-  }, []);
-  console.log('props:', props);
-  return (
-    <React.Fragment>
-      <h1 ref={measuredRef}>Hello, world</h1> 
-      <h2>The above header is {Math.round(props.boundingBox.height)}px tall</h2>
-      <svg>
-        <circle fill="white" stroke="black" r="5" transform={"translate(" + props.boundingBox.right + ",30)"}/>
-      </svg>
-    </React.Fragment>
-  );
 }
 
 class IngredientsSection extends React.Component {
@@ -162,10 +139,12 @@ class IngredientsSection extends React.Component {
       this.testref = React.createRef();
       this.state = {
         boundingBox: {right: 0, top: 0},
-        boundingBoxes: {}
+        boundingBoxes: {},
+        boundingBoxesSteps: {}
       };
       console.log('state:', this.state);
       this.updateDimensions = this.updateDimensions.bind(this);
+      this.updateStepDimensions = this.updateStepDimensions.bind(this);
     }
 
     updateDimensions1(i) {
@@ -174,30 +153,19 @@ class IngredientsSection extends React.Component {
     }
 
     updateDimensions(bbox, index) {
-      console.log('updating index ' + index + ' of boundingBoxes');
+      console.log('updating index ' + index + ' of boundingBoxes', bbox);
       var bboxes = this.state.boundingBoxes;
       bboxes[index] = bbox;
       this.setState({boundingBoxes: bboxes});
     }
 
-    // render() {
-    //     console.log('ingredients', this.props.ingredients);
-    //     const ingredients = this.props.ingredients.map((ingredient, index) => {
-    //         return (
-    //               <Ingredient 
-    //                   key={index} 
-    //                   text={ingredient.ingredients[0]}
-    //                   position={[0, index * 20]}
-    //                   transform={"translate(0," + index * 20 + ")"} />)
-    //     });
-    //     return (
-    //         <React.Fragment>
-    //           <g transform={"translate(" + this.props.position[0] + "," + this.props.position[1] + ")"}>
-    //             {ingredients}
-    //           </g>
-    //         </React.Fragment>
-    //     )
-    // }
+    updateStepDimensions(bbox, index) {
+      console.log('updating index ' + index + ' of boundingBoxesSteps', bbox);
+      var bboxes = this.state.boundingBoxesSteps;
+      bboxes[index] = bbox;
+      this.setState({boundingBoxesSteps: bboxes});
+    }
+
     render() {
       console.log('rendering ingredientssection...');
       console.log(this.props);
@@ -211,18 +179,58 @@ class IngredientsSection extends React.Component {
 
       const ingredients = this.props.ingredients.map((ingredient, index) => {
         console.log(ingredient, index);
-        if (this.state.boundingBoxes)
         return (
           <Ingredient
             updateFunc={this.updateDimensions} 
-            boundingBox={this.state.boundingBoxes[index] || {'right': 0}}
             text={ingredient.ingredients[0]}
             index={index} />
 
         );
       });
+
+      const steps = this.props.steps.map((step, index) => {
+        console.log(step, index);
+        return (
+          <Ingredient
+            updateFunc={this.updateStepDimensions} 
+            text={step}
+            index={index} />
+        );
+      });
+
+      const ingredient_nodes = Object.keys(this.state.boundingBoxes).map(index => {
+        const y_coord = (this.state.boundingBoxes[index].top - 100) + (this.state.boundingBoxes[index].height * 0.4)
+        return (
+          <circle
+            fill="white" 
+            stroke="black" 
+            r="6"
+            transform={"translate(10," + y_coord + ")"} />
+        );
+      })
+
+      const step_nodes = Object.keys(this.state.boundingBoxesSteps).map(index => {
+        const y_coord = (this.state.boundingBoxesSteps[index].top - 100) + (this.state.boundingBoxesSteps[index].height * 0.4);
+        const x_coord = index * 30 + 18;
+        return (
+          <circle
+            fill="white" 
+            stroke="black" 
+            r="6"
+            transform={"translate(" + x_coord + "," + y_coord + ")"} />
+        );
+      })
       return (
-        <React.Fragment>{ingredients}</React.Fragment>
+        <div className="bottom">
+          <div className="recipe">
+            {ingredients}
+            {steps}
+          </div>
+          <svg className="graph">
+            {ingredient_nodes}
+            {step_nodes}
+          </svg>
+        </div>
       );
   }
 }
@@ -301,12 +309,11 @@ class Recipe extends React.Component {
         console.log('rerendering...');
         return (
             <React.Fragment>
-            <div className="recipe" id="recipe_container">
                 <IngredientsSection 
                       position={[0, 0]}
                       height={this.props.ingredients.length * 20}
-                      ingredients={this.props.ingredients} />
-            </div>
+                      ingredients={this.props.ingredients}
+                      steps={this.props.steps} />
             </React.Fragment>
         )
     }

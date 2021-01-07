@@ -64,7 +64,7 @@ class Recipedia extends React.Component {
             this.setState({'ingredients': json.ingredients});
             this.setState({'nodes': json.steps});
             const steps = json.steps.map((item) => item.instruction);
-            this.setState({'steps': json.steps});
+            this.setState({'steps': steps});
         });
     }
 
@@ -78,11 +78,9 @@ class Recipedia extends React.Component {
                     value={this.state.value}
                     handleChange={this.handleChange}
                     handleSubmit={this.handleSubmit} />
-                <div className="bottom">
-                    <Recipe 
-                        ingredients={this.state.ingredients}
-                        steps={this.state.steps}/>
-                </div>
+                <Recipe 
+                    ingredients={this.state.ingredients}
+                    steps={this.state.steps}/>
             </div>
         )
     }
