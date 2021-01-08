@@ -117,16 +117,19 @@ function setNodeCoords(ingredientNodes, stepNodes, height, width) {
 
 function Ingredient(props) {
 
-  const measuredRef = useCallback(node => {    
+  console.log('windowsize:', props.windowSize);
+  const measuredRef = useCallback(node => {  
+    console.log('in callback for ', node);  
     if (node !== null) {
+      console.log('calling update func:', node.getBoundingClientRect(), props.index)
       props.updateFunc(node.getBoundingClientRect(), props.index);
     }  
-  }, []);
+  }, [props.windowSize]);
 
-  console.log('props:', props);
+  console.log('rendering ingredient:', props);
   return (
     <React.Fragment>
-    <div style={{margin: '5px'}} ref={measuredRef}>{props.text}</div>
+    <div key={props.index} style={{padding: '5px'}} ref={measuredRef}>{props.text}</div>
     </React.Fragment>
   )
 }
@@ -145,11 +148,6 @@ class IngredientsSection extends React.Component {
       console.log('state:', this.state);
       this.updateDimensions = this.updateDimensions.bind(this);
       this.updateStepDimensions = this.updateStepDimensions.bind(this);
-    }
-
-    updateDimensions1(i) {
-      console.log('setting dimensions:', i);
-      this.setState({boundingBox: i});
     }
 
     updateDimensions(bbox, index) {
@@ -171,19 +169,14 @@ class IngredientsSection extends React.Component {
       console.log(this.props);
       console.log(this.state);
 
-      const measuredRef = node => {
-          if (node !== null) {      
-            this.setState({boundingBox: node.getBoundingClientRect()});
-          }  
-      };
-
       const ingredients = this.props.ingredients.map((ingredient, index) => {
         console.log(ingredient, index);
         return (
           <Ingredient
             updateFunc={this.updateDimensions} 
             text={ingredient.ingredients[0]}
-            index={index} />
+            index={index}
+            windowSize={this.props.windowSize} />
 
         );
       });
@@ -194,12 +187,15 @@ class IngredientsSection extends React.Component {
           <Ingredient
             updateFunc={this.updateStepDimensions} 
             text={step}
-            index={index} />
+            index={index}
+            windowSize={this.props.windowSize} />
         );
       });
 
       const ingredient_nodes = Object.keys(this.state.boundingBoxes).map(index => {
-        const y_coord = (this.state.boundingBoxes[index].top - 100) + (this.state.boundingBoxes[index].height * 0.4)
+        const y_coord = (
+          (this.state.boundingBoxes[index].top - this.state.boundingBoxes[0].top) + 
+          (this.state.boundingBoxes[index].height / 2));
         return (
           <circle
             fill="white" 
@@ -210,7 +206,9 @@ class IngredientsSection extends React.Component {
       })
 
       const step_nodes = Object.keys(this.state.boundingBoxesSteps).map(index => {
-        const y_coord = (this.state.boundingBoxesSteps[index].top - 100) + (this.state.boundingBoxesSteps[index].height * 0.4);
+        const y_coord = (
+          (this.state.boundingBoxesSteps[index].top - this.state.boundingBoxes[0].top) + 
+          (this.state.boundingBoxesSteps[index].height / 2));
         const x_coord = index * 30 + 18;
         return (
           <circle
@@ -313,7 +311,8 @@ class Recipe extends React.Component {
                       position={[0, 0]}
                       height={this.props.ingredients.length * 20}
                       ingredients={this.props.ingredients}
-                      steps={this.props.steps} />
+                      steps={this.props.steps}
+                      windowSize={[this.state.width, this.state.height]} />
             </React.Fragment>
         )
     }
@@ -321,67 +320,6 @@ class Recipe extends React.Component {
 
 
 
-class NodeLabel extends React.Component {
-  render() {
-    if (this.props.show) {
-      console.log('rendering label');
-      const divStyle = {
-        whiteSpace: 'pre-line'
-      }
-      return (
-        <foreignObject className="node-label" transform="translate(10,-10)" width="20em" height="10em">
-          <div style={divStyle}>{this.props.label}</div>
-        </foreignObject>
-      )
-    } else {
-      console.log('rendering empty');
-      return <div></div>
-    }
-  }
-}
-
-class Node extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      showLabel: false
-    }
-    this.toggleLabel = this.toggleLabel.bind(this);
-    this.mouseEnter = this.mouseEnter.bind(this);
-    this.mouseLeave = this.mouseLeave.bind(this)
-  }
-
-  toggleLabel() {
-    console.log('toggle');
-    this.setState({showLabel: !this.state.showLabel});
-  }
-
-  mouseEnter() {
-    this.setState({showLabel: true});
-  }
-
-  mouseLeave() {
-    this.setState({showLabel: false});
-  }
-
-  render() {
-    return (
-      <React.Fragment>
-          <g 
-            transform={this.props.transform}
-            onMouseEnter={this.mouseEnter}
-            onMouseLeave={this.mouseLeave}
-            >
-            <circle fill="white" stroke="black" r="5" cx="0" cy="0"/>
-            <NodeLabel 
-              show={this.state.showLabel}
-              label={this.props.label} />
-          </g>
-      </React.Fragment>
-    )
-  }
-}
 
 class Edge extends React.Component {
 
@@ -391,55 +329,6 @@ class Edge extends React.Component {
   }
 }
 
-class RecipeTree extends React.Component {
 
-
-  constructor(props) {
-    super(props);
-    this.buildPaths = this.buildPaths.bind(this);
-  }
-
-  /**
-   * Given a list of nodes, make a path for each edge between them
-   */
-  buildPaths(nodes) {
-    var edges = nodes.reduce((acc, node) => {
-        // make a connector edge between the node and each of its parents
-        const incomingEdges = node.parents.map((parent) => {
-            return (
-              <Edge 
-                start={nodes[parent].point} 
-                end={node.point} />);
-        });
-        return acc.concat(incomingEdges);
-    }, []);
-    return edges;
-  }
-
-  render() {
-
-    console.log('nodes:', this.props);
-
-    setNodeCoords(this.props.ingredientNodes, this.props.stepNodes, 380, 500);
-
-    const paths = this.buildPaths(this.props.ingredientNodes.concat(this.props.stepNodes));
-
-    var circles = this.props.ingredientNodes.concat(this.props.stepNodes).map(function(n) {
-      return (
-        <Node 
-          transform={"translate(" + n.point[0] + "," + n.point[1] + ")"}
-          label={n.ingredients.join('\n')} />)
-    })
-
-    return (
-      <div id="tree">
-        <svg width="500" height="380">
-          { paths }
-          { circles }
-        </svg>
-      </div>
-    )
-  }
-}
 
 export default Recipe;
