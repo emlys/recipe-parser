@@ -56,24 +56,31 @@ class Recipedia extends React.Component {
 
     handleSubmit(event) {
         event.preventDefault();
+        console.log('handle submit');
 
         const search_url = 'http://127.0.0.1:8000/recipedia/search?query=';
         fetch(search_url + this.state.value)
         .then(res => res.json())
         .then(json => {
-            this.setState({'ingredients': json.ingredients});
-            this.setState({'nodes': json.steps});
-            const steps = json.steps.map((item) => item.instruction);
-            this.setState({'steps': steps});
+            console.log('json:', json);
+            console.log(json.ingredients);
+            console.log(json.steps);
+            this.setState({
+                'ingredients': json.ingredients,
+                'steps': json.steps });
+            // console.log('here');
+            // this.setState({'nodes': json.steps});
+            // const steps = json.steps.map((item) => item.instruction);
+            // this.setState({'steps': steps});
         });
     }
 
     render() {
+        console.log('state:', this.state);
         return (
             <div className="page">
                 <h1 className="header">Recipedia</h1>
                 <h2>a recipe synthesizer</h2>
-                <div style={{position: 'absolute'}} left='100px' right='0px'>XX</div>
                 <SearchBar 
                     value={this.state.value}
                     handleChange={this.handleChange}
