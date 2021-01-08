@@ -19,7 +19,13 @@ def index(request):
 def find_and_parse_recipes(request):
     print(request)
     print(request.GET)
-    urls = search(request.GET['query'])
+
+    query = request.GET['query']
+    if query.startswith('http'):
+        urls = [query]
+    else:
+        urls = search(query)
+
     recipes = get_recipes(urls, parser)
     print(recipes)
     print(recipes[0].order)
@@ -76,13 +82,7 @@ def get_recipes(urls, parser):
     recipes = []
 
     for url in urls:
-        response = requests.get(url)
-        if response.status_code in [200, 201]:
-            soup = BeautifulSoup(response.text, 'lxml')
-            if parser.is_wordpress_recipe(soup):
-                recipes.append(parser.parse_wordpress_recipe(soup))
-        else:
-            print(f'Error code {response.status_code} for url {url}')
+        recipes.append(parser.parse(url))
     return recipes
         
 

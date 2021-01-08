@@ -80,11 +80,12 @@ def get_objects(token: Token) -> list:
     # get all immediate direct objects of the token
     dobjs = [child for child in token.children if child.dep_ == 'dobj']
     if len(dobjs) == 0:
-        return [], []
+        return []
     else:
         objs = [d for d in dobjs]
         for d in dobjs:
-            objs += self.get_all_conjuncts(d)
+            objs += get_all_conjuncts(d)
+        return objs
 
 
 def get_top_noun(span: Span):
