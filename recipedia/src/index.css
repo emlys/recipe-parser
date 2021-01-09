@@ -36,9 +36,19 @@ html {
     text-align: right;
 }
 
+.divider {
+    height: 0.2em;
+    background-color: black;
+    margin: 0.5em;
+}
+
 .graph {
     width: 50%;
     z-index: 10;
+}
+
+.recipe-item {
+    padding: 0.5em;
 }
 
 .recipe-steps {
