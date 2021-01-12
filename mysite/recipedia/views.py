@@ -27,16 +27,27 @@ def find_and_parse_recipes(request):
         urls = search(query)
 
     recipes = get_recipes(urls, parser)
-    print(recipes)
-    print(recipes[0].order)
-    for node in recipes[0].order:
-        print(node.instruction)
-        if node.instruction:
-            print(node.instruction.text)
+ 
+    ingredients = []
+    # for node in recipes[0].ingredient_nodes:
+    #     node_dict = node.as_dict()
+    #     node_dict['magnitude'] = node.ingredients[0].quantity.magnitude
+    #     node_dict['unit'] = str(node.ingredients[0].quantity.units)
+    #     ingredients.append(node_dict)
+
+
+    for ingredient in recipes[0].ingredients:
+        ingredient_dict = {}
+        ingredient_dict['magnitude'] = ingredient.quantity.magnitude
+        ingredient_dict['unit'] = str(ingredient.quantity.units)
+        ingredient_dict['name'] = ingredient.name
+        ingredients.append(ingredient_dict)
+
             
     response = JsonResponse({
-        'ingredients': [node.as_dict() for node in recipes[0].ingredient_nodes],
-        'steps': [node.as_dict() for node in recipes[0].order[len(recipes[0].ingredient_nodes):]]
+        'ingredients': ingredients,
+        'steps': [node.step.as_dict() for node in recipes[0].order[len(recipes[0].ingredient_nodes):]],
+        'graph': [node.as_dict() for node in recipes[0].order]
     })
     response["Access-Control-Allow-Origin"] = "*"
     response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
@@ -44,6 +55,60 @@ def find_and_parse_recipes(request):
     response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
     return response
 
+
+def format_ingredients(nodes):
+    """Format a list of ingredient Nodes into a dictionary for JSON response.
+    Args:
+        nodes (list): list of ingredient Nodes
+
+    Returns:
+        ingredients dictionary in the format:
+        {
+            0: {
+                id: 0,
+                magnitude: 2,
+                unit: 'cup',
+                name: 'flour'
+            }
+        }
+    """
+    ingredients_dict = {}
+    for node in nodes:
+        ingredient = node.ingredients[0]
+        node_dict = {}
+        node_dict['id'] = node.name
+        node_dict['magnitude'] = ingredient.quantity.magnitude
+        node_dict['unit'] = str(ingredient.quantity.units)
+        node_dict['name'] = ingredient.name
+        ingredients_dict[node.name] = node_dict
+    return ingredients_dict
+
+def format_steps(nodes):
+    """Format a list of step Nodes into a dictionary for JSON response.
+    Args:
+        nodes (list): list of step Nodes
+
+    Returns:
+        steps dictionary in the format:
+        {
+            1: {
+                id: 1,
+                parents: [0],
+                ingredients: [0],
+                text: [
+                    {word: 'Mix', nodeRef: None},
+                    {word: 'the', nodeRef: None},
+                    {word: 'flour', nodeRef: 0}
+                ],
+                verbIndex: 0
+            }
+        }
+    """
+    steps_dict = {}
+    for node in nodes:
+        node_dict = {}
+        node_dict['id'] = node.name
+        node_dict['parents'] = [parent.name for parent in node.parents]
 
 def search(query, number=10):
     """Web search for a query.

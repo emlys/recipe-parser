@@ -65,7 +65,7 @@ class Recipedia extends React.Component {
             console.log(json.ingredients);
             console.log(json.steps);
             let nodeMap = {};
-            const nodes = json.ingredients.concat(json.steps);
+            const nodes = json.graph;
             console.log('nodes:', nodes);
             for (const node of nodes) {
                 console.log(node.name, node);
@@ -73,7 +73,7 @@ class Recipedia extends React.Component {
             }
             this.setState({
                 'ingredients': json.ingredients,
-                'steps': json.steps,
+                'graph': json.graph,
                 'nodeMap': nodeMap });
         });
     }
@@ -90,7 +90,7 @@ class Recipedia extends React.Component {
                     handleSubmit={this.handleSubmit} />
                 <Recipe 
                     ingredients={this.state.ingredients}
-                    steps={this.state.steps}
+                    graph={this.state.graph}
                     nodeMap={this.state.nodeMap} />
             </div>
         )

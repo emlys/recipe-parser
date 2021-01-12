@@ -13,7 +13,7 @@ var Connector = require('paths-js/connector');
 // node position controls position of edges
 
 
-function Ingredient(props) {
+function MeasuredDiv(props) {
 
   const measuredRef = useCallback(node => {  
     console.log('in callback for ', node);  
@@ -25,9 +25,7 @@ function Ingredient(props) {
 
   console.log('rendering ingredient:', props);
   return (
-    <React.Fragment>
     <div key={props.index} className="recipe-item" ref={measuredRef}>{props.text}</div>
-    </React.Fragment>
   )
 }
 
@@ -85,58 +83,72 @@ class IngredientsSection extends React.Component {
       console.log(this.props);
       console.log(this.state);
 
-      const ingredients = this.props.ingredients.map(ingredient => {
-        console.log(ingredient);
-        return (
-          <Ingredient
-            updateFunc={this.updateBBox} 
-            text={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.ingredients[0]}
-            index={ingredient.name}
-            windowSize={this.props.windowSize} />
+      // const ingredients = this.props.ingredients.map(ingredient => {
+      //   console.log(ingredient);
+      //   return (
+      //     <MeasuredDiv
+      //       updateFunc={this.updateBBox} 
+      //       text={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
+      //       index={ingredient.name}
+      //       windowSize={this.props.windowSize} />
 
-        );
-      });
+      //   );
+      // });
 
-      const steps = this.props.steps.map(step => {
-        console.log(step);
-        return (
-          <Ingredient
-            updateFunc={this.updateBBox} 
-            text={step.instruction}
-            index={step.name}
-            windowSize={this.props.windowSize} />
-        );
-      });
-
-      let coordsMap = {};
-      console.log('bboxMap:', this.state.bboxMap);
-      const ingredient_node_coords = this.props.ingredients.map(ingredient => {
-        console.log('mapping over ingredients');
-        const key = ingredient.name;
-        if (this.state.bboxMap[key]) {
-          const x_coord = 10;
-          const y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
-            (this.state.bboxMap[key].height / 2));
-          coordsMap[key] = [x_coord, y_coord];
+      let ingredients = [];
+      let steps = [];
+      for (const node of this.props.graph) {
+        if (node.step) {  // a step node
+          steps.push(
+            <MeasuredDiv
+              updateFunc={this.updateBBox} 
+              text={node.step.full_text}
+              index={node.name}
+              windowSize={this.props.windowSize} />
+          );
+        } else {  // an ingredient node
+          const ingredient = this.props.ingredients[node.ingredients[0]];
+          ingredients.push(
+            <MeasuredDiv
+              updateFunc={this.updateBBox} 
+              text={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
+              index={node.name}
+              windowSize={this.props.windowSize} />
+          );
         }
-      });
-
-      let horizontal_spacing = 10;
-      if (this.state.svgBBox) {
-        horizontal_spacing = this.state.svgBBox.width / (this.props.steps.length + 1);
       }
 
 
-      const step_node_coords = this.props.steps.map(step => {
-        const key = step.name;
-        if (this.state.bboxMap[key]) {
-          const x_coord = (key - this.props.ingredients.length + 1) * horizontal_spacing;
-          const y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
-            (this.state.bboxMap[key].height / 2));
+      let coordsMap = {};
+      console.log('bboxMap:', this.state.bboxMap);
 
-          coordsMap[key] = [x_coord, y_coord];
+      const nIngredients = this.props.ingredients.length;
+      const nSteps = this.props.graph.length - nIngredients;
+
+      let horizontal_spacing = 10;
+      if (this.state.svgBBox) {
+        horizontal_spacing = this.state.svgBBox.width / (nSteps + 1);
+      }
+
+      this.props.graph.map(node => {
+        const key = node.name;
+        if (!this.state.bboxMap[key]) {
+          return;
         }
-      });
+        let x_coord, y_coord;
+
+        if (node.step) {  // a step node
+          x_coord = (key - this.props.ingredients.length + 1) * horizontal_spacing;
+          y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
+            (this.state.bboxMap[key].height / 2));
+        } else {  // an ingredient node
+          x_coord = 10;
+          y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
+            (this.state.bboxMap[key].height / 2));
+        }
+        coordsMap[key] = [x_coord, y_coord];
+      })
+
           
       console.log('coordsMap:', coordsMap);
 
@@ -151,12 +163,12 @@ class IngredientsSection extends React.Component {
           );
       });
 
-      const edges = this.props.steps.reduce((acc, step) => {
-        const endCoord = coordsMap[step.name];
+      const edges = this.props.graph.reduce((acc, node) => {
+        const endCoord = coordsMap[node.name];
         if (endCoord) {
-          const incomingEdges = step.parents.map(parent => {
+          const incomingEdges = node.parents.map(parent => {
             const startCoord = coordsMap[parent];
-
+            console.log(parent, startCoord);
             const connector = Connector({
               start: startCoord,
               end: endCoord,
@@ -221,7 +233,7 @@ class Recipe extends React.Component {
                       position={[0, 0]}
                       height={this.props.ingredients.length * 20}
                       ingredients={this.props.ingredients}
-                      steps={this.props.steps}
+                      graph={this.props.graph || []}
                       nodeMap={this.props.nodeMap}
                       windowSize={[this.state.width, this.state.height]} />
             </React.Fragment>

@@ -7,6 +7,7 @@ from spacy import displacy
 
 from .container import Container
 from .node import Node
+from .step import Step
 from . import spacy_helpers as sh
 
 
@@ -40,7 +41,6 @@ class Recipe:
         self.nlp = nlp
 
         print(self.ingredients)
-        self.normalize_ingredients()
 
         self.ingredient_nodes = []
 
@@ -53,7 +53,13 @@ class Recipe:
         # It is updated as the graph grows and connects.
         # New Nodes may only be connected to Nodes that are in this list 
         # at the time they are instantiated.
-        self.graph = self.initialize_graph()
+        self.graph = []
+        for index, ingredient in enumerate(self.ingredients):
+            n = Node(index)
+            n.ingredients.append(index)
+            self.graph.append(n)
+            self.order.append(n)
+            self.ingredient_nodes.append(n)
 
         self.graph_surface = self.graph.copy()
 
@@ -66,20 +72,16 @@ class Recipe:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
 
-
-
-    def initialize_graph(self) -> list:
-        """Return a list of Nodes, one storing each Ingredient"""
-
-        graph = []
-        for index, ingredient in enumerate(self.ingredients):
-            n = Node(index)
-            n.ingredients.append(ingredient)
-            graph.append(n)
-            self.order.append(n)
-            self.ingredient_nodes.append(n)
-
-        return graph
+        print(self.order)
+        for node in self.order:
+            if node.step:
+                print(node.step.span.text)
+                if node.step.verb:
+                    print('verb:', node.step.verb)
+                    print(node.step.span.doc[node.step.verb])
+                for key, val in node.step.labels.items():
+                    print('key, val:', key, val)
+                    print('ingredient:', node.step.span[key], self.order[val])
 
 
     def parse_steps(self, sent):
@@ -95,31 +97,36 @@ class Recipe:
         # Some steps have multiple clauses which should be treated as separate steps
         # Recursively parse any trailing clauses
         head, tail = sh.split_conjuncts(sent)
-
-
+        print('start:', head.start)
+        for word in head:
+            print(word)
         #displacy.serve(head)
+
+        step = Step(head)
 
         # Most steps in recipes are commands
         # Ideally spacy will have identified the imperative verb as the sentence root
         if self.is_imperative(head.root):
+
+            step.set_verb(head.root.i)
             
             objs = sh.get_objects(head.root)
-            print(head.root, objs)
-
+            print('head:', head, head.root, head.root.i)
             if objs:
                 nodes = []
                 for o in objs:
                     identity = self.identify_object(o)
                     if identity:
                         nodes.append(identity)
+                        print(o, o.i, 'matches', identity, identity.index)
+                        step.label_item(o.i, identity.index)
 
-                # nouns = sh.get_all_nouns(sent)
-
-                # ingredient_nodes, containers = self.identify_objects(nouns)
-         
-                # 
                 if nodes:
-                    new_node = Node(self.node_index, head, head.root, nodes)
+                    new_node = Node(
+                        index=self.node_index, 
+                        step=step,
+                        parents=nodes
+                    )
                     self.node_index += 1
                     self.add_new_node(new_node)
                     self.current_ref = new_node
@@ -128,10 +135,13 @@ class Recipe:
 
             else:
                 if isinstance(self.current_ref, Node):
-                    new_node = Node(self.node_index, head, head.root, [self.current_ref])
+                    new_node = Node(
+                        index=self.node_index, 
+                        step=step,
+                        parents=[self.current_ref]
+                    )
                     self.node_index += 1
                     self.add_new_node(new_node) 
-
 
         else:
             pass
@@ -173,14 +183,17 @@ class Recipe:
 
         matches = []
         for node in self.graph_surface:
-            for ingredient in node.ingredients:
-                if ingredient.has_words(name):
+            for i in node.ingredients:
+                if self.ingredients[i].has_words(name):
                     matches.append(node)
                     break
         print(name, 'matches:')
         for m in matches:
             print(m)
-        return matches[0]
+        if matches:
+            return matches[0]
+        else:
+            return None
 
 
 

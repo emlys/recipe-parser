@@ -133,12 +133,13 @@ class RecipeParser:
             notes = tag.find('span', class_='wprm-recipe-ingredient-notes')
 
             amount, unit, name, notes = [attr.get_text().lower() if attr else None for attr in [amount, unit, name, notes]]
-
-            ingredients.append(Ingredient(amount, unit, name, notes, self.ureg, self.nlp))
+            print('amount, quzntity', amount, unit)
+            quantity = self.ureg.Quantity(amount or 0, unit)
+            ingredients.append(Ingredient(quantity, name, self.ureg, self.nlp))
 
         instructions = ' '.join([tag.get_text() for tag in instruction_tags])
 
-        r = recipe.Recipe(ingredients, instructions, self.ureg, self.nlp)
+        r = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
         return r
 
