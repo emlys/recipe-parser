@@ -117,3 +117,8 @@ h2 {
     border-radius: 12px;
     background-color: #fffcea;
 }
+
+.hovered-label {
+    font-weight: bold;
+    text-decoration: underline;
+}

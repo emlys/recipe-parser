@@ -9,6 +9,27 @@ var Connector = require('paths-js/connector');
 
 class LabeledSpan extends React.Component {
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      isHovered: false
+    }
+    this.onMouseEnter = this.onMouseEnter.bind(this);
+    this.onMouseLeave = this.onMouseLeave.bind(this);
+  }
+
+  onMouseEnter() {
+    this.setState(
+      {isHovered: true}, 
+      () => this.props.mouseEnterCallback(this.props.target));  // after state is set, call the callback
+  }
+
+  onMouseLeave() {
+    this.setState(
+      {isHovered: false},
+      () => this.props.mouseLeaveCallback(this.props.target));
+  }
+
   render() {
     const {
       text,  // string
@@ -16,12 +37,12 @@ class LabeledSpan extends React.Component {
       onMouseEnter,
       onMouseLeave
     } = this.props;
-
+    console.log('isHovered:', this.state.isHovered);
     return (
       <span 
-        style={{fontWeight: 'bold'}}
-        onMouseEnter={() => onMouseEnter(target)}
-        onMouseLeave={() => onMouseLeave(target)}>
+        style={{fontWeight: 'bold', textDecoration: (this.state.isHovered ? 'underline' : '')}}
+        onMouseEnter={this.onMouseEnter}
+        onMouseLeave={this.onMouseLeave}>
           {text}
       </span>
     );
@@ -37,8 +58,8 @@ class Step extends React.Component {
       verb,          // integer
       labels,        // object
       fullText,      // string
-      onMouseEnter,  // function
-      onMouseLeave   // function
+      mouseEnterCallback,  // function
+      mouseLeaveCallback   // function
     } = this.props;
 
     let formattedTokens = [];
@@ -84,8 +105,8 @@ class Step extends React.Component {
           <LabeledSpan
             text={span}
             target={labels[key].node_index}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave} />
+            mouseEnterCallback={mouseEnterCallback}
+            mouseLeaveCallback={mouseLeaveCallback} />
         );
         key = i;
         span = [];
@@ -107,20 +128,28 @@ class Step extends React.Component {
 
 
 function MeasuredDiv(props) {
-
+  const {
+    index,
+    isBold,
+    content,
+    updateFunc,
+    updateDeps,
+    className
+  } = props;
+  console.log('rendering measureddiv ' + index);
+  console.log('css class:', className);
   const measuredRef = useCallback(node => {  
     if (node !== null) {
-      props.updateFunc(node.getBoundingClientRect(), props.index);
+      updateFunc(node.getBoundingClientRect(), index);
     }  
-  }, [props.windowSize]);
+  }, updateDeps);
 
   return (
     <div 
-      key={props.index} 
-      className="recipe-item"
-      style={props.isBold ? {fontWeight: 'bold'} : {}} 
+      key={index} 
+      className={className}
       ref={measuredRef}>
-        {props.content}
+        {content}
     </div>
   )
 }
@@ -137,8 +166,7 @@ function MeasuredSVG(props) {
     <svg 
       ref={measuredRef} 
       className="graph">
-        {props.edges}
-        {props.nodes}
+        {props.svgContent}
     </svg>
   )
 }
@@ -152,6 +180,10 @@ class Recipe extends React.Component {
         bboxMap: {},
         svgBBox: null,
         isBold: Object.keys(props.ingredients).reduce((acc, key) => {
+          acc[key] = false;
+          return acc;
+        }, {}),
+        isHovered: Object.keys(props.graph).reduce((acc, key) => {
           acc[key] = false;
           return acc;
         }, {})
@@ -177,16 +209,23 @@ class Recipe extends React.Component {
     }
 
     onLabelMouseEnter(key) {
-      console.log('setting ' + key + ' to bold');
+      console.log('mouse enter');
       const isBold = this.state.isBold;
       isBold[key] = true;
-      this.setState({isBold: isBold})
+
+      const isHovered = this.state.isHovered;
+      isHovered[key] = true;
+      this.setState({isBold: isBold, isHovered: isHovered});
     }
 
     onLabelMouseLeave(key) {
+      console.log('mouse leave');
       const isBold = this.state.isBold;
       isBold[key] = false;
-      this.setState({isBold: isBold})
+      
+      const isHovered = this.state.isHovered;
+      isHovered[key] = false;
+      this.setState({isBold: isBold, isHovered: isHovered});
     }
 
     render() {
@@ -198,10 +237,10 @@ class Recipe extends React.Component {
         return (
           <MeasuredDiv
             updateFunc={this.updateBBox} 
+            updateDeps={[this.props.windowSize]}
             content={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
             index={index}
-            windowSize={this.props.windowSize}
-            isBold={this.state.isBold[index]} />
+            className={"recipe-item" + (this.state.isBold[index] ? " hovered-label" : "")}/>
         );
       });
 
@@ -212,15 +251,16 @@ class Recipe extends React.Component {
             verb={node.step.verb}
             labels={node.step.labels}
             fullText={node.step.full_text}
-            onMouseEnter={this.onLabelMouseEnter}
-            onMouseLeave={this.onLabelMouseLeave} />
+            mouseEnterCallback={this.onLabelMouseEnter}
+            mouseLeaveCallback={this.onLabelMouseLeave} />
         );
         return (
           <MeasuredDiv
             updateFunc={this.updateBBox} 
+            updateDeps={[this.props.windowSize]}
             content={step}
             index={node.name}
-            windowSize={this.props.windowSize} />
+            className={"recipe-item" + (this.state.isHovered[node.name] ? " hovered-label" : "")}/>
         );
       });
  
@@ -242,7 +282,7 @@ class Recipe extends React.Component {
           (this.state.bboxMap[key].height / 2));
 
         coordsMap[key] = [x_coord, y_coord];
-      })
+      });
 
       this.props.graph.map(node => {
         const key = node.name;
@@ -254,28 +294,7 @@ class Recipe extends React.Component {
           (this.state.bboxMap[key].height / 2));
       
         coordsMap[key] = [x_coord, y_coord];
-      })
-
-      // this.props.graph.map(node => {
-      //   const key = node.name;
-      //   if (!this.state.bboxMap[key]) {
-      //     return;
-      //   }
-      //   let x_coord, y_coord;
-
-      //   if (node.step) {  // a step node
-      //     x_coord = (key - this.props.ingredients.length + 1) * horizontal_spacing;
-      //     y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
-      //       (this.state.bboxMap[key].height / 2));
-      //   } else {  // an ingredient node
-      //     x_coord = 10;
-      //     y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
-      //       (this.state.bboxMap[key].height / 2));
-      //   }
-      //   coordsMap[key] = [x_coord, y_coord];
-      // })
-
-          
+      });
 
 
       const nodes = Object.keys(coordsMap).map(key => {
@@ -289,6 +308,8 @@ class Recipe extends React.Component {
           );
       });
 
+      // for each node, make a connector from it to each of its parents
+      // accumulate all the connectors into a list
       const edges = this.props.graph.reduce((acc, node) => {
         const endCoord = coordsMap[node.name];
         if (endCoord) {
@@ -301,12 +322,14 @@ class Recipe extends React.Component {
             });
 
             return (
-              <path d={ connector.path.print() } fill="none" stroke="gray" />
+              <path 
+                d={ connector.path.print() } 
+                fill="none" 
+                stroke="gray" />
             );
           });
           return acc.concat(incomingEdges);
         }
-        
       }, []);
 
 
@@ -320,8 +343,7 @@ class Recipe extends React.Component {
           <MeasuredSVG
             updateFunc={this.updateSVGBBox} 
             windowSize={this.props.windowSize}
-            nodes={nodes}
-            edges={edges} />
+            svgContent={<g>{edges}{nodes}</g>} />
         </div>
       );
   }
