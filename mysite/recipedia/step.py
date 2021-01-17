@@ -19,7 +19,11 @@ class Step:
         Returns:
             None
         """
-        self.labels[token_index] = ingredient_index
+        self.labels[token_index] = {
+            'start': token_index,
+            'end': token_index,
+            'node_index': ingredient_index
+        }
 
     def set_verb(self, token_index):
         """Mark a token of this Step as the main verb.

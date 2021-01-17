@@ -81,7 +81,7 @@ class Recipe:
                     print(node.step.span.doc[node.step.verb])
                 for key, val in node.step.labels.items():
                     print('key, val:', key, val)
-                    print('ingredient:', node.step.span[key], self.order[val])
+                    print('ingredient:', node.step.span[key], self.order[val['node_index']])
 
 
     def parse_steps(self, sent):
