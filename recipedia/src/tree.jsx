@@ -7,6 +7,99 @@ var Connector = require('paths-js/connector');
 
 
 
+class LabeledSpan extends React.Component {
+
+  render() {
+    const {
+      text,  // string
+      target,
+      onMouseEnter,
+      onMouseLeave
+    } = this.props;
+
+    return (
+      <span 
+        style={{fontWeight: 'bold'}}
+        onMouseEnter={() => onMouseEnter(target)}
+        onMouseLeave={() => onMouseLeave(target)}>
+          {text}
+      </span>
+    );
+  }
+}
+
+
+class Step extends React.Component {
+
+  render() {
+    const {
+      tokens,        // object
+      verb,          // integer
+      labels,        // object
+      fullText,      // string
+      onMouseEnter,  // function
+      onMouseLeave   // function
+    } = this.props;
+
+    let formattedTokens = [];
+    const punctuation = ['.', ',', '?', '!', ':', ';'];
+
+    const indices = Object.keys(tokens);
+    const min = Math.min(...indices);
+    const max = Math.max(...indices);
+    let key = min;
+
+    let spans = [];  // accumulate spans 
+    let span = [];  // accumulate tokens in the current span
+    while (key <= max) {
+      let token = tokens[key];
+
+      // put a space before each token, unless it's punctuation, or the first word
+      if (key > min && !punctuation.includes(token)) {
+        token = ' ' + token;
+      }
+
+      if (labels[key]) {  // this is the start of a labeled section
+
+        // close the current span and start a new one
+        if (span.length > 0) {  // only create a span if it has content
+          spans.push(<span>{span}</span>);
+          span = [token];
+        }
+
+        // add each word from the labeled range into a separate span
+        // this way the whole thing can be made bold or underlined
+        let i = key + 1;
+        while (i <= labels[key].end) {
+          let token = tokens[i];
+          // put a space before each token, unless it's punctuation, or the first word
+          if (i > min && !punctuation.includes(token)) {
+            token = ' ' + token;
+          }
+          span.push(token);
+          i += 1;
+        }
+        // a span that has hovering behavior
+        spans.push(
+          <LabeledSpan
+            text={span}
+            target={labels[key].node_index}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave} />
+        );
+        key = i;
+        span = [];
+      } else {
+        span.push(token);
+        key += 1;
+      }
+    }
+    // complete the final span
+    spans.push(<span>{span}</span>);
+    return (<div>{spans}</div>);
+  }
+}
+
 
 // window size controls text position
 // ingredient and step text position controls position of nodes
@@ -16,30 +109,30 @@ var Connector = require('paths-js/connector');
 function MeasuredDiv(props) {
 
   const measuredRef = useCallback(node => {  
-    console.log('in callback for ', node);  
     if (node !== null) {
-      console.log('calling update func:', node.getBoundingClientRect(), props.index)
       props.updateFunc(node.getBoundingClientRect(), props.index);
     }  
   }, [props.windowSize]);
 
-  console.log('rendering ingredient:', props);
   return (
-    <div key={props.index} className="recipe-item" ref={measuredRef}>{props.text}</div>
+    <div 
+      key={props.index} 
+      className="recipe-item"
+      style={props.isBold ? {fontWeight: 'bold'} : {}} 
+      ref={measuredRef}>
+        {props.content}
+    </div>
   )
 }
 
 function MeasuredSVG(props) {
 
   const measuredRef = useCallback(node => {  
-    console.log('in callback for ', node);  
     if (node !== null) {
-      console.log('calling update func:', node.getBoundingClientRect(), props.index)
       props.updateFunc(node.getBoundingClientRect(), props.index);
     }  
   }, [props.windowSize]);
 
-  console.log('rendering ingredient:', props);
   return (
     <svg 
       ref={measuredRef} 
@@ -50,25 +143,30 @@ function MeasuredSVG(props) {
   )
 }
 
-class IngredientsSection extends React.Component {
+class Recipe extends React.Component {
 
     constructor(props) {
       super(props);
-      console.log('in constructor with props:', props);
       this.testref = React.createRef();
       this.state = {
         bboxMap: {},
-        svgBBox: null
+        svgBBox: null,
+        isBold: Object.keys(props.ingredients).reduce((acc, key) => {
+          acc[key] = false;
+          return acc;
+        }, {})
       };
       console.log('state:', this.state);
 
       this.updateBBox = this.updateBBox.bind(this);
       this.updateSVGBBox = this.updateSVGBBox.bind(this);
+      this.onLabelMouseEnter = this.onLabelMouseEnter.bind(this);
+      this.onLabelMouseLeave = this.onLabelMouseLeave.bind(this);
     }
 
     updateBBox(bbox, index) {
       console.log('updating index ' + index + ' of nodemap with bbox ', bbox);
-      var bboxMap = this.state.bboxMap;
+      const bboxMap = this.state.bboxMap;
       bboxMap[index] = bbox;
       this.setState({bboxMap: bboxMap});
     }
@@ -78,31 +176,41 @@ class IngredientsSection extends React.Component {
       this.setState({svgBBox: bbox});
     }
 
+    onLabelMouseEnter(key) {
+      console.log('setting ' + key + ' to bold');
+      const isBold = this.state.isBold;
+      isBold[key] = true;
+      this.setState({isBold: isBold})
+    }
+
+    onLabelMouseLeave(key) {
+      const isBold = this.state.isBold;
+      isBold[key] = false;
+      this.setState({isBold: isBold})
+    }
+
     render() {
       console.log('rendering ingredientssection...');
       console.log(this.props);
       console.log(this.state);
 
-      // const ingredients = this.props.ingredients.map(ingredient => {
-      //   console.log(ingredient);
-      //   return (
-      //     <MeasuredDiv
-      //       updateFunc={this.updateBBox} 
-      //       text={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
-      //       index={ingredient.name}
-      //       windowSize={this.props.windowSize} />
-
-      //   );
-      // });
-
       let ingredients = [];
       let steps = [];
       for (const node of this.props.graph) {
         if (node.step) {  // a step node
+          const step = (
+            <Step
+              tokens={node.step.tokens}
+              verb={node.step.verb}
+              labels={node.step.labels}
+              fullText={node.step.full_text}
+              onMouseEnter={this.onLabelMouseEnter}
+              onMouseLeave={this.onLabelMouseLeave} />
+          );
           steps.push(
             <MeasuredDiv
               updateFunc={this.updateBBox} 
-              text={node.step.full_text}
+              content={step}
               index={node.name}
               windowSize={this.props.windowSize} />
           );
@@ -111,19 +219,18 @@ class IngredientsSection extends React.Component {
           ingredients.push(
             <MeasuredDiv
               updateFunc={this.updateBBox} 
-              text={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
+              content={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
               index={node.name}
-              windowSize={this.props.windowSize} />
+              windowSize={this.props.windowSize}
+              isBold={this.state.isBold[node.name]} />
           );
         }
       }
 
-
-      let coordsMap = {};
-      console.log('bboxMap:', this.state.bboxMap);
-
       const nIngredients = this.props.ingredients.length;
       const nSteps = this.props.graph.length - nIngredients;
+
+      let coordsMap = {};
 
       let horizontal_spacing = 10;
       if (this.state.svgBBox) {
@@ -150,7 +257,7 @@ class IngredientsSection extends React.Component {
       })
 
           
-      console.log('coordsMap:', coordsMap);
+
 
       const nodes = Object.keys(coordsMap).map(key => {
         return (
@@ -168,7 +275,6 @@ class IngredientsSection extends React.Component {
         if (endCoord) {
           const incomingEdges = node.parents.map(parent => {
             const startCoord = coordsMap[parent];
-            console.log(parent, startCoord);
             const connector = Connector({
               start: startCoord,
               end: endCoord,
@@ -184,7 +290,6 @@ class IngredientsSection extends React.Component {
         
       }, []);
 
-      console.log('edges:', edges);
 
       return (
         <div className="bottom">
@@ -202,56 +307,6 @@ class IngredientsSection extends React.Component {
       );
   }
 }
-
-
-class Recipe extends React.Component {
-
-    constructor(props) {
-      super(props);
-      this.state = {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        coord: 0
-      };
-      this.updateDimensions = this.updateDimensions.bind(this);
-    }
-
-    componentDidMount() {
-      window.addEventListener('resize', this.updateDimensions);
-    }
-
-    updateDimensions() {
-      console.log('updating dimensions:', window.innerWidth, window.innerHeight);
-      this.setState({width: window.innerWidth, height: window.innerHeight});
-    }
-
-    render() {
-        console.log('rerendering...');
-        return (
-            <React.Fragment>
-                <IngredientsSection 
-                      position={[0, 0]}
-                      height={this.props.ingredients.length * 20}
-                      ingredients={this.props.ingredients}
-                      graph={this.props.graph || []}
-                      nodeMap={this.props.nodeMap}
-                      windowSize={[this.state.width, this.state.height]} />
-            </React.Fragment>
-        )
-    }
-}
-
-
-
-
-class Edge extends React.Component {
-
-  render() {
-    const bezier = Bezier({points: [this.props.start, this.props.end]})
-    return <path d={ bezier.path.print() } fill="none" stroke="gray" />
-  }
-}
-
 
 
 export default Recipe;

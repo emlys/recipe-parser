@@ -43,10 +43,22 @@ class Recipedia extends React.Component {
         this.state = {
             value: '',
             steps: [],
-            ingredients: []
+            ingredients: [],
+            width: window.innerWidth,
+            height: window.innerHeight,
+            coord: 0
         }
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.updateDimensions = this.updateDimensions.bind(this);
+    }
+
+    componentDidMount() {
+      window.addEventListener('resize', this.updateDimensions);
+    }
+
+    updateDimensions() {
+      this.setState({width: window.innerWidth, height: window.innerHeight});
     }
 
     handleChange(event) {
@@ -89,9 +101,12 @@ class Recipedia extends React.Component {
                     handleChange={this.handleChange}
                     handleSubmit={this.handleSubmit} />
                 <Recipe 
+                    position={[0, 0]}
+                    height={this.state.ingredients.length * 20}
                     ingredients={this.state.ingredients}
-                    graph={this.state.graph}
-                    nodeMap={this.state.nodeMap} />
+                    graph={this.state.graph || []}
+                    nodeMap={this.state.nodeMap}
+                    windowSize={[this.state.width, this.state.height]} />
             </div>
         )
     }
