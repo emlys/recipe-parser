@@ -101,11 +101,8 @@ class Recipedia extends React.Component {
                     handleChange={this.handleChange}
                     handleSubmit={this.handleSubmit} />
                 <Recipe 
-                    position={[0, 0]}
-                    height={this.state.ingredients.length * 20}
                     ingredients={this.state.ingredients}
                     graph={this.state.graph || []}
-                    nodeMap={this.state.nodeMap}
                     windowSize={[this.state.width, this.state.height]} />
             </div>
         )

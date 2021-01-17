@@ -194,67 +194,86 @@ class Recipe extends React.Component {
       console.log(this.props);
       console.log(this.state);
 
-      let ingredients = [];
-      let steps = [];
-      for (const node of this.props.graph) {
-        if (node.step) {  // a step node
-          const step = (
-            <Step
-              tokens={node.step.tokens}
-              verb={node.step.verb}
-              labels={node.step.labels}
-              fullText={node.step.full_text}
-              onMouseEnter={this.onLabelMouseEnter}
-              onMouseLeave={this.onLabelMouseLeave} />
-          );
-          steps.push(
-            <MeasuredDiv
-              updateFunc={this.updateBBox} 
-              content={step}
-              index={node.name}
-              windowSize={this.props.windowSize} />
-          );
-        } else {  // an ingredient node
-          const ingredient = this.props.ingredients[node.ingredients[0]];
-          ingredients.push(
-            <MeasuredDiv
-              updateFunc={this.updateBBox} 
-              content={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
-              index={node.name}
-              windowSize={this.props.windowSize}
-              isBold={this.state.isBold[node.name]} />
-          );
-        }
-      }
+      const ingredients = this.props.ingredients.map((ingredient, index) => {
+        return (
+          <MeasuredDiv
+            updateFunc={this.updateBBox} 
+            content={ingredient.magnitude + ' ' + ingredient.unit + ' ' + ingredient.name}
+            index={index}
+            windowSize={this.props.windowSize}
+            isBold={this.state.isBold[index]} />
+        );
+      });
 
-      const nIngredients = this.props.ingredients.length;
-      const nSteps = this.props.graph.length - nIngredients;
+      const steps = this.props.graph.map(node => {
+        const step = (
+          <Step
+            tokens={node.step.tokens}
+            verb={node.step.verb}
+            labels={node.step.labels}
+            fullText={node.step.full_text}
+            onMouseEnter={this.onLabelMouseEnter}
+            onMouseLeave={this.onLabelMouseLeave} />
+        );
+        return (
+          <MeasuredDiv
+            updateFunc={this.updateBBox} 
+            content={step}
+            index={node.name}
+            windowSize={this.props.windowSize} />
+        );
+      });
+ 
 
       let coordsMap = {};
 
       let horizontal_spacing = 10;
       if (this.state.svgBBox) {
-        horizontal_spacing = this.state.svgBBox.width / (nSteps + 1);
+        horizontal_spacing = this.state.svgBBox.width / (this.props.graph.length + 1);
       }
+
+      let x_coord, y_coord;
+      this.props.ingredients.map((ingredient, key) => {
+        if (!this.state.bboxMap[key]) {
+          return;
+        }
+        x_coord = 10;
+        y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
+          (this.state.bboxMap[key].height / 2));
+
+        coordsMap[key] = [x_coord, y_coord];
+      })
 
       this.props.graph.map(node => {
         const key = node.name;
         if (!this.state.bboxMap[key]) {
           return;
         }
-        let x_coord, y_coord;
-
-        if (node.step) {  // a step node
-          x_coord = (key - this.props.ingredients.length + 1) * horizontal_spacing;
-          y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
-            (this.state.bboxMap[key].height / 2));
-        } else {  // an ingredient node
-          x_coord = 10;
-          y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
-            (this.state.bboxMap[key].height / 2));
-        }
+        x_coord = (key - this.props.ingredients.length + 1) * horizontal_spacing;
+        y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
+          (this.state.bboxMap[key].height / 2));
+      
         coordsMap[key] = [x_coord, y_coord];
       })
+
+      // this.props.graph.map(node => {
+      //   const key = node.name;
+      //   if (!this.state.bboxMap[key]) {
+      //     return;
+      //   }
+      //   let x_coord, y_coord;
+
+      //   if (node.step) {  // a step node
+      //     x_coord = (key - this.props.ingredients.length + 1) * horizontal_spacing;
+      //     y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
+      //       (this.state.bboxMap[key].height / 2));
+      //   } else {  // an ingredient node
+      //     x_coord = 10;
+      //     y_coord = (this.state.bboxMap[key].top - this.state.bboxMap[0].top + 
+      //       (this.state.bboxMap[key].height / 2));
+      //   }
+      //   coordsMap[key] = [x_coord, y_coord];
+      // })
 
           
 
