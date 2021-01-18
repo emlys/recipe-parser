@@ -62,61 +62,43 @@ class Step extends React.Component {
       mouseLeaveCallback   // function
     } = this.props;
 
-    let formattedTokens = [];
     const punctuation = ['.', ',', '?', '!', ':', ';'];
-
-    const indices = Object.keys(tokens);
-    const min = Math.min(...indices);
-    const max = Math.max(...indices);
-    let key = min;
+    const min = Math.min(...Object.keys(tokens));
 
     let spans = [];  // accumulate spans 
     let span = [];  // accumulate tokens in the current span
-    while (key <= max) {
-      let token = tokens[key];
 
-      // put a space before each token, unless it's punctuation, or the first word
-      if (key > min && !punctuation.includes(token)) {
-        token = ' ' + token;
+    let label = null;
+    let labelEnd = null;
+    for (let key of Object.keys(tokens)) {
+      key = parseInt(key);
+      
+      if (key > min && !punctuation.includes(tokens[key])) {
+        span.push(' ')  // add a space
       }
 
-      if (labels[key]) {  // this is the start of a labeled section
+      if (labels[key]) {  // start of a new labeled section
+        label = labels[key].node_index;
+        labelEnd = labels[key].end;
+        spans.push(<span>{span}</span>);
+        span = [];
+      }
 
-        // close the current span and start a new one
-        if (span.length > 0) {  // only create a span if it has content
-          spans.push(<span>{span}</span>);
-          span = [token];
-        }
+      span.push(tokens[key]);
 
-        // add each word from the labeled range into a separate span
-        // this way the whole thing can be made bold or underlined
-        let i = key + 1;
-        while (i <= labels[key].end) {
-          let token = tokens[i];
-          // put a space before each token, unless it's punctuation, or the first word
-          if (i > min && !punctuation.includes(token)) {
-            token = ' ' + token;
-          }
-          span.push(token);
-          i += 1;
-        }
-        // a span that has hovering behavior
+      if (key === labelEnd) {  // end of the current labeled section
         spans.push(
           <LabeledSpan
             text={span}
-            target={labels[key].node_index}
+            target={label}
             mouseEnterCallback={mouseEnterCallback}
             mouseLeaveCallback={mouseLeaveCallback} />
         );
-        key = i;
         span = [];
-      } else {
-        span.push(token);
-        key += 1;
+        label = null;
       }
     }
-    // complete the final span
-    spans.push(<span>{span}</span>);
+    spans.push(<span>{span}</span>);  // complete the final span
     return (<div>{spans}</div>);
   }
 }
@@ -136,8 +118,6 @@ function MeasuredDiv(props) {
     updateDeps,
     className
   } = props;
-  console.log('rendering measureddiv ' + index);
-  console.log('css class:', className);
   const measuredRef = useCallback(node => {  
     if (node !== null) {
       updateFunc(node.getBoundingClientRect(), index);
