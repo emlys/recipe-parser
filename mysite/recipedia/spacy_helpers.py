@@ -34,19 +34,6 @@ def get_shallow_conjuncts(token: Token) -> list:
     return [child for child in token.children if child.dep_ == 'conj']
 
 
-def get_objects(token: Token) -> list:
-    
-    head, tail = split_conjuncts(token)
-    objects = [head]
-
-    while tail:
-        
-        head, tail = split_conjuncts(tail)
-        objects.append(head)
-
-    return objects
-
-
 def split_conjuncts(span: Span):
     # Get the first conjunct
     conjs = get_shallow_conjuncts(span.root)
@@ -68,7 +55,7 @@ def split_conjuncts(span: Span):
         return span, None
 
 
-def get_objects(token: Token) -> list:
+def get_direct_objects(token: Token) -> list:
     """
     Return all objects of the token.
 
@@ -86,6 +73,33 @@ def get_objects(token: Token) -> list:
         for d in dobjs:
             objs += get_all_conjuncts(d)
         return objs
+
+def and_conjuncts(token):
+    return [token] + list(token.conjuncts)
+
+def get_prepositional_objects(token):
+    """
+    Return (nested) prepositional objects of the token.
+
+    Parameters:
+        token: spacy Token (word)
+    Returns:
+        list of spacy Tokens
+    """
+    prepositional_objects = []
+    prepositions = [child for child in token.children if child.dep_ == 'prep']
+    print('prepositions:', prepositions)
+    for prep in prepositions:
+        objects = []
+        for child in prep.children:
+            if child.dep_ == 'pobj':
+                objects += and_conjuncts(child)
+
+        print('objects:', objects)
+        prepositional_objects += objects
+        for obj in objects:
+            prepositional_objects += get_prepositional_objects(obj)
+    return prepositional_objects
 
 
 def get_top_noun(span: Span):

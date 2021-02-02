@@ -13,7 +13,7 @@ class RecipeParser:
     def __init__(self):
         """Instantiate NLP package and unit registry to use in Recipes"""
         print('Loading spacy package...')
-        self.nlp = spacy.load('en_core_web_lg')
+        self.nlp = spacy.load('en_core_web_md')
         print('done. Loading pint unit registry...')
         self.ureg = pint.UnitRegistry()
         print('done.')

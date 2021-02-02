@@ -41,26 +41,18 @@ class Recipe:
 
         print(self.ingredients)
 
-        self.ingredient_nodes = []
-
-        # This list of Nodes will store them in the order that they
-        # are parsed/happen in the instructions
-        self.order = []
-
         # The graph is a list of nodes, 
         # each one being the root of a different connected component.
         # It is updated as the graph grows and connects.
         # New Nodes may only be connected to Nodes that are in this list 
         # at the time they are instantiated.
         self.graph = []
+
+        self.ingredient_nodes = []
         for index, ingredient in enumerate(self.ingredients):
             n = Node(index)
             n.ingredients.add(index)
-            self.graph.append(n)
-            self.order.append(n)
             self.ingredient_nodes.append(n)
-
-        self.graph_surface = self.graph.copy()
 
         self.current_ref = None
 
@@ -68,17 +60,6 @@ class Recipe:
         for sentence in self.nlp(instructions).sents:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
-
-        print(self.order)
-        for node in self.order:
-            if node.step:
-                print(node.step.span.text)
-                if node.step.verb:
-                    print('verb:', node.step.verb)
-                    print(node.step.span.doc[node.step.verb])
-                for key, val in node.step.labels.items():
-                    print('key, val:', key, val)
-                    print('ingredient:', node.step.span[key], self.order[val['node_index']])
 
 
     def parse_steps(self, sent):
@@ -148,6 +129,13 @@ class Recipe:
                 self.parse_steps(tail)
 
 
+    def identify(self, span):
+
+        for obj in sh.get_objects(span.root):
+            identity, (min_index, max_index) = self.identify_object(o)
+        for pobj in sh.get_prepositional_objects(span.root)
+
+
     def is_imperative(self, token):
         """Check if a token is an imperative verb.
         It is imperative if the POS tag is the infinitive (VB) and
@@ -183,7 +171,7 @@ class Recipe:
         name = ' '.join(name)
 
         matches = []
-        for node in self.graph_surface:
+        for node in (self.ingredient_nodes + self.graph):
             for i in node.ingredients:
                 if self.ingredients[i].has_words(name):
                     matches.append(node)
@@ -204,25 +192,18 @@ class Recipe:
         Parameters:
             node: a Node to insert
         """
+        print('adding new node')
         self.graph.append(node)
-        self.graph_surface.append(node)
-        for parent in node.parents:
-            try:
-                self.graph_surface.remove(parent)
-            except:
-                pass
-
-        self.order.append(node)
         self.current_ref = node
 
 
 
     def best_matching_node(self, token):
 
-        scores = [node.max_base_similarity(token) for node in self.graph_surface]
+        scores = [node.max_base_similarity(token) for node in self.graph]
         if max(scores) >= 0.7:
             # return the node with the highest score
-            match = self.graph_surface[np.argmax(np.array(scores))]
+            match = self.graph[np.argmax(np.array(scores))]
         else:
             # if all the scores are low, the token likely isn't an ingredient
             return None

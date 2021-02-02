@@ -35,9 +35,9 @@ class TestParseSteps(unittest.TestCase):
 
         recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
-        self.assertEqual(len(recipe.order), 7)  # 5 ingredients + 2 steps
-        self.assertEqual(recipe.order[5].ingredients, {1, 2})
-        self.assertEqual(recipe.order[6].ingredients, {0, 3, 4})
+        self.assertEqual(len(recipe.graph), 2)  # 2 steps
+        self.assertEqual(recipe.graph[0].ingredients, {1, 2})
+        self.assertEqual(recipe.graph[1].ingredients, {0, 3, 4})
 
     def test_substring_match(self):
         """Each word of the reference is a substring of the ingredient."""
@@ -59,9 +59,31 @@ class TestParseSteps(unittest.TestCase):
             'the black pepper, orange zest and juice.')
         recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
-        self.assertEqual(len(recipe.order), 6)  # 4 ingredients + 2 steps
-        self.assertEqual(recipe.order[4].ingredients, {1, 2})
-        self.assertEqual(recipe.order[5].ingredients, {3, 0, 0})
+        self.assertEqual(len(recipe.graph), 2)  # 2 steps
+        self.assertEqual(recipe.graph[0].ingredients, {1, 2})
+        self.assertEqual(recipe.graph[1].ingredients, {3, 0})
+
+    def test_preposition_object_match(self):
+        """Identify ingredients that are the object of a preposition."""
+        ingredients = [
+            Ingredient(
+                self.ureg.Quantity(magnitude, unit),
+                name, 
+                self.ureg, 
+                self.nlp
+            ) for (magnitude, unit, name) in [
+                (8, 'ounce', 'chocolate'),
+                (1, 'cup', 'heavy cream'),
+                (1, 'cup', 'mini marshmallows')
+            ]
+        ]
+        instructions = ('Stir the chocolate into the heavy cream. '
+            'Pour over the mini marshmallows.')
+        recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
+        
+        self.assertEqual(len(recipe.graph), 2)  # 2 steps
+        self.assertEqual(recipe.graph[0].ingredients, {0, 1})
+        self.assertEqual(recipe.graph[1].ingredients, {0, 1, 2})
 
 if __name__ == '__main__':
     unittest.main()
