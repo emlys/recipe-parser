@@ -5,7 +5,6 @@ import re
 import spacy
 from spacy import displacy
 
-from .container import Container
 from .node import Node
 from .step import Step
 from . import spacy_helpers as sh
@@ -56,14 +55,12 @@ class Recipe:
         self.graph = []
         for index, ingredient in enumerate(self.ingredients):
             n = Node(index)
-            n.ingredients.append(index)
+            n.ingredients.add(index)
             self.graph.append(n)
             self.order.append(n)
             self.ingredient_nodes.append(n)
 
         self.graph_surface = self.graph.copy()
-
-        self.containers = []
 
         self.current_ref = None
 
@@ -115,7 +112,7 @@ class Recipe:
             if objs:
                 nodes = []
                 for o in objs:
-                    identity = self.identify_object(o)
+                    identity, (min_index, max_index) = self.identify_object(o)
                     if identity:
                         nodes.append(identity)
                         print(o, o.i, 'matches', identity, identity.index)
@@ -170,13 +167,17 @@ class Recipe:
 
         print('token:', token)
         if token.text in {'oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan', 'foil'}:
-            return None
+            return None, (None, None)
 
         name = []
+        max_index = token.i
+        min_index = token.i
         for child in token.children:
             if child.dep_ == 'compound' or child.dep_ == 'amod':
                 # a compound noun
                 name.append(child.text)
+                if child.i < min_index:
+                    min_index = child.i
 
         name.append(token.text)
         name = ' '.join(name)
@@ -191,11 +192,9 @@ class Recipe:
         for m in matches:
             print(m)
         if matches:
-            return matches[0]
+            return matches[0], (min_index, max_index)
         else:
             return None
-
-
 
 
     def add_new_node(self, node):
@@ -229,55 +228,6 @@ class Recipe:
             return None
 
 
-    def identify_objects(self, objs):
-
-        ings, conts = [], []
-        for obj in objs:
-            identities = self.identify(obj)
-            for identity in identities:
-                if isinstance(identity, Node):
-                    ings.append(identity)
-                elif isinstance(identity, Container):
-                    conts.append(identity)
-
-        return ings, conts
-
-
-    def identify(self, token) -> list:
-        """
-        Return the Node(s) to which the token refers
-
-        Parameters:
-            token: spacy Token representing the word to ID
-        Returns:
-            list of Nodes that the token may refer to
-        """
-        keyword = token.lemma_
-        if self.is_kitchen_equipment(keyword):
-            for container in self.containers:
-                if keyword == container.name:
-                    return [container]
-            else:
-                container = Container(keyword)
-                self.add_new_container(container)
-                return [container]
-
-        else:
-            matches = []
-            for n in self.graph_surface:
-                for i in n.ingredients:
-                    if i.has_words(keyword):
-                        matches.append(n)
-                        break
-            if matches:
-                return matches
-
-            return [self.best_matching_node(token)] or []
-
-
-    def add_new_container(self, container: Container):
-        self.containers.append(container)
-
     def is_kitchen_equipment(self, word: str):
         kitchen_equipment = {'oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan'}
         if word in kitchen_equipment:
@@ -287,50 +237,4 @@ class Recipe:
 
     def __str__(self):
         return self.text
-
-    def normalize_ingredients(self):
-        total = self.ureg.Quantity(0, 'cup')
-        for ingr in self.ingredients:
-            if ingr.quantity.check('[volume]'):
-                total += ingr.quantity
-
-        for ingr in self.ingredients:
-            if ingr.quantity.check('[volume]'):
-                ingr.percent = (ingr.quantity.to('cup') / total).magnitude
-
-
-
-    def plot_ingredients(self):
-        """Display relative volumes of ingredients as a pie chart"""
-
-        by_percent = sorted(self.ingredients, key=lambda x: x.percent, reverse=True)
-        labels = [ingredient.name for ingredient in by_percent]
-        sizes = [ingredient.percent for ingredient in by_percent]
-
-        # make a unique rainbow color for each ingredient
-        colors = plt.cm.rainbow(np.linspace(0, 1, len(by_percent)))
-
-        plt.figure(figsize=(10, 5))
-        
-        panel = plt.axes([0.1, 0.1, 0.5, 0.8])
-
-        panel.pie(sizes, colors=colors, radius=0.5)
-        panel.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-
-        plt.legend(
-            loc='center left',
-            bbox_to_anchor=(1, 0.5),
-            labels=labels
-        )
-
-        plt.show()
-
-
-
-    def print(self):
-        for i in self.ingredients:
-            print(i)
-
-        for i in self.instructions:
-            print(i)
 

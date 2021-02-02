@@ -36,8 +36,8 @@ class TestParseSteps(unittest.TestCase):
         recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
         self.assertEqual(len(recipe.order), 7)  # 5 ingredients + 2 steps
-        self.assertEqual(recipe.order[5].ingredients, [1, 2])
-        self.assertEqual(recipe.order[6].ingredients, [0, 3, 4])
+        self.assertEqual(recipe.order[5].ingredients, {1, 2})
+        self.assertEqual(recipe.order[6].ingredients, {0, 3, 4})
 
     def test_substring_match(self):
         """Each word of the reference is a substring of the ingredient."""
@@ -60,8 +60,8 @@ class TestParseSteps(unittest.TestCase):
         recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
         self.assertEqual(len(recipe.order), 6)  # 4 ingredients + 2 steps
-        self.assertEqual(recipe.order[4].ingredients, [1, 2])
-        self.assertEqual(recipe.order[5].ingredients, [3, 0, 0])
+        self.assertEqual(recipe.order[4].ingredients, {1, 2})
+        self.assertEqual(recipe.order[5].ingredients, {3, 0, 0})
 
 if __name__ == '__main__':
     unittest.main()

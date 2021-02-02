@@ -12,10 +12,11 @@ class Node:
         self.index = index
         self.step = step
         self.parents = parents or []
-        self.ingredients = []  # a list of ints pointing to index of Recipe.ingredients
+        # a set of ints pointing to index of Recipe.ingredients
+        self.ingredients = set()  
 
         for parent in self.parents:
-            self.ingredients += parent.ingredients
+            self.ingredients = self.ingredients.union(parent.ingredients)
 
     def max_base_similarity(self, token) -> float:
         return max(token.similarity(i.base) for i in self.ingredients)
