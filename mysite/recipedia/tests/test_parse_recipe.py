@@ -30,8 +30,8 @@ class TestParseSteps(unittest.TestCase):
             ]
         ]
 
-        instructions = ('Cook onion and butter over medium low heat until '
-            'tender, about 5 minutes. Add flour, poultry seasoning & thyme.')
+        instructions = ('Cook onion and butter about 5 minutes. '
+            'Add flour, poultry seasoning & thyme.')
 
         recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
@@ -48,20 +48,19 @@ class TestParseSteps(unittest.TestCase):
                 self.ureg, 
                 self.nlp
             ) for (magnitude, unit, name) in [
-                (1, None, 'orange, juiced and zested'),
+                (1, None, 'lime, juiced and zested'),
                 (1, None, 'orange bell pepper'),
-                (1, None, 'green bell pepper'),
                 (1/4, 'teaspoon', 'black pepper')
             ]
         ]
 
-        instructions = ('Chop the orange pepper and green pepper. Mix '
-            'the black pepper, orange zest and juice.')
+        instructions = ('Chop the orange pepper. '
+            'Mix the black pepper, zest and juice.')
         recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
         self.assertEqual(len(recipe.graph), 2)  # 2 steps
-        self.assertEqual(recipe.graph[0].ingredients, {1, 2})
-        self.assertEqual(recipe.graph[1].ingredients, {3, 0})
+        self.assertEqual(recipe.graph[0].ingredients, {1})
+        self.assertEqual(recipe.graph[1].ingredients, {0, 2})
 
     def test_preposition_object_match(self):
         """Identify ingredients that are the object of a preposition."""
@@ -78,12 +77,45 @@ class TestParseSteps(unittest.TestCase):
             ]
         ]
         instructions = ('Stir the chocolate into the heavy cream. '
-            'Pour over the mini marshmallows.')
+            'Combine with the mini marshmallows.')
         recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
         
         self.assertEqual(len(recipe.graph), 2)  # 2 steps
         self.assertEqual(recipe.graph[0].ingredients, {0, 1})
         self.assertEqual(recipe.graph[1].ingredients, {0, 1, 2})
+
+    def test_choose_best_match(self):
+        """Identify ingredients with overlapping names."""
+        ingredients = [
+            Ingredient(
+                self.ureg.Quantity(magnitude, unit),
+                name, 
+                self.ureg, 
+                self.nlp
+            ) for (magnitude, unit, name) in [
+                (1, None, 'orange bell pepper'),
+                (1/4, 'teaspoon', 'black pepper'),
+                (1, 'tablespoon', 'hot sauce'),
+                (1, 'teaspoon', 'Worcestershire sauce')
+            ]
+        ]
+
+        instructions = ('Chop the orange pepper. Grind the black pepper. '
+            'Mix the Worcestershire. Add hot sauce to taste.')
+        recipe = Recipe(ingredients, instructions, self.ureg, self.nlp)
+        self.assertEqual(len(recipe.graph), 4)  # 4 steps
+        self.assertEqual(recipe.graph[0].ingredients, {0})
+        self.assertEqual(recipe.graph[1].ingredients, {1})
+        self.assertEqual(recipe.graph[2].ingredients, {3})
+        self.assertEqual(recipe.graph[3].ingredients, {2})
+
+        # if one match: use that
+        # elif multiple matches:
+        #     incorporate amod, compound words to narrow down
+        # if still multiple matches:
+        #     if matches are single and word is plural:
+        #         use all matches
+
 
 if __name__ == '__main__':
     unittest.main()

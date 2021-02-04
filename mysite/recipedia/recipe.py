@@ -10,6 +10,11 @@ from .step import Step
 from . import spacy_helpers as sh
 
 
+# dobj?  pobj?  
+#  no     no    not a step
+#  no     yes   infer dobj as prev node
+#  yes    no    use dobj
+#  yes    yes   use both
 
 class Recipe:
 
@@ -88,38 +93,42 @@ class Recipe:
 
             step.set_verb(head.root.i)
             
-            objs = sh.get_objects(head.root)
-            print('head:', head, head.root, head.root.i)
-            if objs:
-                nodes = []
-                for o in objs:
-                    identity, (min_index, max_index) = self.identify_object(o)
-                    if identity:
-                        nodes.append(identity)
-                        print(o, o.i, 'matches', identity, identity.index)
-                        step.label_item(o.i, identity.index)
+            dobjs = sh.get_direct_objects(head.root)
+            pobjs = sh.get_prepositional_objects(head.root)
+            dobj_nodes = []
+            pobj_nodes = []
+            print(dobjs, pobjs)
 
-                if nodes:
-                    new_node = Node(
-                        index=self.node_index, 
-                        step=step,
-                        parents=nodes
-                    )
-                    self.node_index += 1
-                    self.add_new_node(new_node)
-                    self.current_ref = new_node
+            for dobj in dobjs:
+                identity, (min_index, max_index) = self.identify_object(dobj)
+                if identity:
+                    dobj_nodes.append(identity)
+                    print(dobj, dobj.i, 'matches', identity, identity.index)
+                    step.label_item(dobj.i, identity.index)
 
-                # otherwise, the object of the sentence isn't a node
+            for pobj in pobjs:
+                identity, (min_index, max_index) = self.identify_object(pobj)
+                print(pobj, 'identity:', identity)
+                if identity:
+                    pobj_nodes.append(identity)
+                    print(pobj, pobj.i, 'matches', identity, identity.index)
+                    step.label_item(pobj.i, identity.index)
+            
+            if pobjs and not dobjs:
+                dobj_nodes = [self.current_ref]
 
-            else:
-                if isinstance(self.current_ref, Node):
-                    new_node = Node(
-                        index=self.node_index, 
-                        step=step,
-                        parents=[self.current_ref]
-                    )
-                    self.node_index += 1
-                    self.add_new_node(new_node) 
+            print('nodes:', dobj_nodes + pobj_nodes)
+            if dobj_nodes:
+                new_node = Node(
+                    index=self.node_index, 
+                    step=step,
+                    parents=dobj_nodes + pobj_nodes
+                )
+                self.node_index += 1
+                self.add_new_node(new_node)
+                self.current_ref = new_node
+
+            # otherwise, the object of the sentence isn't a node
 
         else:
             pass
@@ -131,9 +140,10 @@ class Recipe:
 
     def identify(self, span):
 
-        for obj in sh.get_objects(span.root):
+        for obj in sh.get_direct_objects(span.root):
             identity, (min_index, max_index) = self.identify_object(o)
-        for pobj in sh.get_prepositional_objects(span.root)
+        for pobj in sh.get_prepositional_objects(span.root):
+            identity, (min_index, max_index) = self.identify_object(o)
 
 
     def is_imperative(self, token):
@@ -168,22 +178,28 @@ class Recipe:
                     min_index = child.i
 
         name.append(token.text)
-        name = ' '.join(name)
 
-        matches = []
+        matches = set()
+        max_count = 0
+        print('name:', name)
+        # Find the node(s) with the best matching ingredients
+        # Determined by how many of the words in the reference are in the ingredient name
         for node in (self.ingredient_nodes + self.graph):
             for i in node.ingredients:
-                if self.ingredients[i].has_words(name):
-                    matches.append(node)
-                    break
-        print(name, 'matches:')
-        for m in matches:
-            print(m)
-        if matches:
-            return matches[0], (min_index, max_index)
-        else:
-            return None
+                match_count = self.ingredients[i].num_matching_words(name)
+                print(self.ingredients[i].name, match_count)
+                if match_count > max_count:
+                    matches = {node}
+                    max_count = match_count
+                elif match_count == max_count:
+                    matches.add(node)
 
+        # make this return a list of matches
+        print('matches:', matches)
+        if len(matches) == 1:
+            return list(matches)[0], (min_index, max_index)
+        elif len(matches) > 1:
+            return list(matches)[0], (min_index, max_index)
 
     def add_new_node(self, node):
         """

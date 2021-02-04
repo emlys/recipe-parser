@@ -52,6 +52,12 @@ class Ingredient:
                 return False
         return True
 
+    def num_matching_words(self, words):
+        count = 0
+        for word in words:
+            if word in self.name:
+                count += 1
+        return count
 
 
     def __repr__(self):
