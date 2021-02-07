@@ -12,18 +12,20 @@ from . import spacy_helpers
 
 class Ingredient:
 
-    def __init__(self, quantity, name, ureg, nlp):
+    def __init__(self, quantity, name, id_, ureg, nlp):
         """
         Represent a recipe ingredient with its name and amount
 
         Args:
             quantity (pint.Quantity): 
-            name: string describing the ingredient, e.g. 'macaroni pasta'
-            ureg: pint.UnitRegistry instance, must be shared across all Ingredients
-            nlp: spacy.Language object
+            name (string): describes the ingredient, e.g. 'macaroni pasta'
+            id_ (int): unique identifier for this ingredient
+            ureg (pint.UnitRegistry instance): shared across all Ingredients
+            nlp (spacy.Language): shared across all Ingredients
         """
         self.quantity = quantity
         self.name = name.strip()
+        self.id = id_
         self.ureg = ureg
         self.nlp = nlp
 

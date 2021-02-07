@@ -1,6 +1,6 @@
 class Node:
 
-    def __init__(self, index, step=None, parents=None):
+    def __init__(self, index, step=None, matches=None, parents=None):
         """
         Args:
             index (int): the index of this node in the recipe order
@@ -9,6 +9,7 @@ class Node:
             action:
             parents (list[Node]): list of nodes that this node is derived from.
         """
+        print('creating node from', parents)
         self.index = index
         self.step = step
         self.parents = parents or []
@@ -31,7 +32,7 @@ class Node:
         """
         return {
             'name': self.index, 
-            'ingredients': self.ingredients,
+            'ingredients': [ingredient.id for ingredient in self.ingredients],
             'step': self.step.as_dict() if self.step else None,
             'parents': [parent.index for parent in self.parents]
         }

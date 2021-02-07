@@ -26,21 +26,21 @@ def find_and_parse_recipes(request):
     else:
         urls = search(query)
 
-    recipes = get_recipes(urls, parser)
+    recipe = get_recipes(urls, parser)[0]
  
-    ingredients = []
+    ingredients = {}
 
-    for ingredient in recipes[0].ingredients:
+    for ingredient in recipe.ingredients:
         ingredient_dict = {}
         ingredient_dict['magnitude'] = ingredient.quantity.magnitude
         ingredient_dict['unit'] = str(ingredient.quantity.units)
         ingredient_dict['name'] = ingredient.name
-        ingredients.append(ingredient_dict)
+        ingredients[ingredient.id] = ingredient_dict
 
             
     response = JsonResponse({
         'ingredients': ingredients,
-        'graph': [node.as_dict() for node in recipes[0].steps[len(recipes[0].ingredients):]]
+        'graph': [node.as_dict() for node in recipe.graph]
     })
     response["Access-Control-Allow-Origin"] = "*"
     response["Access-Control-Allow-Methods"] = "GET, OPTIONS"

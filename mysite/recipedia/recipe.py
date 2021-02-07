@@ -10,12 +10,6 @@ from .step import Step
 from . import spacy_helpers as sh
 
 
-# dobj?  pobj?  
-#  no     no    not a step
-#  no     yes   infer dobj as prev node
-#  yes    no    use dobj
-#  yes    yes   use both
-
 class Recipe:
 
     def __init__(self, ingredients, instructions, ureg, nlp):
@@ -56,9 +50,9 @@ class Recipe:
         self.ingredient_nodes = []
         for index, ingredient in enumerate(self.ingredients):
             n = Node(index)
-            n.ingredients.add(index)
+            n.ingredients.add(ingredient)
             self.ingredient_nodes.append(n)
-
+        print(self.ingredient_nodes)
         self.current_ref = None
 
         self.node_index = len(self.ingredient_nodes)
@@ -66,6 +60,7 @@ class Recipe:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
 
+        print(self.graph)
 
     def parse_steps(self, sent):
         """
@@ -87,42 +82,59 @@ class Recipe:
 
         step = Step(head)
 
-        # Most steps in recipes are commands
+        # Most sentences in recipes are commands
         # Ideally spacy will have identified the imperative verb as the sentence root
         if self.is_imperative(head.root):
 
             step.set_verb(head.root.i)
             
+            # direct objects: the dobj of the verb and its conjugates, if any
             dobjs = sh.get_direct_objects(head.root)
+            # prepositional objects: verb --prep--> _ --pobj--> noun
             pobjs = sh.get_prepositional_objects(head.root)
-            dobj_nodes = []
-            pobj_nodes = []
             print(dobjs, pobjs)
 
+            is_step = False
+            all_matches = []
+
+            # has dobj?   dobj matches?  has pobj?   pobj matches?
+            #  yes           yes           yes           yes       use both
+            #  yes           yes           yes           no        use dobj only
+            #  yes           yes           no            --        use dobj only
+            #  yes           no            yes           yes       (is this possible?)
+            #  yes           no            yes           no        ignore this step
+            #  yes           no            no            --        ignore this step
+            #  no            --            yes           yes       use pobj; infer dobj is previous dobj
+            #  no            --            yes           no        infer dobj is previous dobj (?)
+            #  no            --            no            --        ignore this step
+            #
+            #  -> if the step has a prepositional object and no direct object, 
+            #     infer that it's implicitly referring to the most recent dobj.
+
             for dobj in dobjs:
-                identity, (min_index, max_index) = self.identify_object(dobj)
-                if identity:
-                    dobj_nodes.append(identity)
-                    print(dobj, dobj.i, 'matches', identity, identity.index)
-                    step.label_item(dobj.i, identity.index)
+                matches = self.identify_object(dobj)
+                if matches:
+                    is_step = True
+                    all_matches += matches
 
             for pobj in pobjs:
-                identity, (min_index, max_index) = self.identify_object(pobj)
-                print(pobj, 'identity:', identity)
-                if identity:
-                    pobj_nodes.append(identity)
-                    print(pobj, pobj.i, 'matches', identity, identity.index)
-                    step.label_item(pobj.i, identity.index)
+                matches = self.identify_object(pobj)
+                if matches:
+                    all_matches += matches
             
+            # infer that it's implicitly referring to the stored reference
             if pobjs and not dobjs:
-                dobj_nodes = [self.current_ref]
+                print('inferring past ref')
+                all_matches.append(Match([], None, self.current_ref))
+                is_step = True
 
-            print('nodes:', dobj_nodes + pobj_nodes)
-            if dobj_nodes:
+            print('all matches:', all_matches)
+            if is_step:
                 new_node = Node(
                     index=self.node_index, 
                     step=step,
-                    parents=dobj_nodes + pobj_nodes
+                    matches=all_matches,
+                    parents=[match.node for match in all_matches]
                 )
                 self.node_index += 1
                 self.add_new_node(new_node)
@@ -137,13 +149,6 @@ class Recipe:
         if tail:
                 self.parse_steps(tail)
 
-
-    def identify(self, span):
-
-        for obj in sh.get_direct_objects(span.root):
-            identity, (min_index, max_index) = self.identify_object(o)
-        for pobj in sh.get_prepositional_objects(span.root):
-            identity, (min_index, max_index) = self.identify_object(o)
 
 
     def is_imperative(self, token):
@@ -162,10 +167,17 @@ class Recipe:
         return False
 
     def identify_object(self, token):
+        """Identify node(s) that the token refers to.
+
+        Args:
+            token (spacy.Token): token to identify
+        Returns:
+            list[Match]: a list of Match objects
+        """
 
         print('token:', token)
         if token.text in {'oven', 'pan', 'pot', 'bowl', 'dish', 'saucepan', 'foil'}:
-            return None, (None, None)
+            return []
 
         name = []
         max_index = token.i
@@ -173,33 +185,32 @@ class Recipe:
         for child in token.children:
             if child.dep_ == 'compound' or child.dep_ == 'amod':
                 # a compound noun
-                name.append(child.text)
+                name.append(child)
                 if child.i < min_index:
                     min_index = child.i
 
-        name.append(token.text)
+        name.append(token)
 
-        matches = set()
+        matches = []
         max_count = 0
         print('name:', name)
         # Find the node(s) with the best matching ingredients
         # Determined by how many of the words in the reference are in the ingredient name
         for node in (self.ingredient_nodes + self.graph):
-            for i in node.ingredients:
-                match_count = self.ingredients[i].num_matching_words(name)
-                print(self.ingredients[i].name, match_count)
+            for ingredient in node.ingredients:
+                # compare by lemma
+                # lemma is the root form of the word
+                match_count = ingredient.num_matching_words([word.lemma_ for word in name])
+                print(ingredient.name, match_count)
                 if match_count > max_count:
-                    matches = {node}
+                    matches = [Match(name, ingredient, node)]
                     max_count = match_count
                 elif match_count == max_count:
-                    matches.add(node)
+                    matches.append(Match(name, ingredient, node))
 
         # make this return a list of matches
         print('matches:', matches)
-        if len(matches) == 1:
-            return list(matches)[0], (min_index, max_index)
-        elif len(matches) > 1:
-            return list(matches)[0], (min_index, max_index)
+        return matches
 
     def add_new_node(self, node):
         """
@@ -234,4 +245,25 @@ class Recipe:
 
     def __str__(self):
         return self.text
+
+
+class Match:
+
+    def __init__(self, words, target, node):
+        """Initialize a match from words in the instructions to an ingredient.
+
+        Args:
+            words (list[token]): the tokens of an instruction step that match
+            target (int): the ingredient index that the text matches
+        """
+        self.words = words
+        self.target = target
+        self.node = node
+
+    def __repr__(self):
+        return 'Match!' + ' '.join([word.text for word in self.words]) + ':' + str(self.target)
+
+
+
+
 

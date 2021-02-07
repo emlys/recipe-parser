@@ -10,21 +10,6 @@ class Step:
         self.verb = None
         self.labels = {}
 
-
-    def label_item(self, token_index, ingredient_index):
-        """Mark a token of this Step as matching an Ingredient.
-        Args:
-            token_index (int): index of token to label in self.span
-            node_index (int): index of matched node in Recipe
-        Returns:
-            None
-        """
-        self.labels[token_index] = {
-            'start': token_index,
-            'end': token_index,
-            'node_index': ingredient_index
-        }
-
     def set_verb(self, token_index):
         """Mark a token of this Step as the main verb.
         Args:

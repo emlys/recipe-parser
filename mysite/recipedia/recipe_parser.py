@@ -125,7 +125,7 @@ class RecipeParser:
         instruction_tags = soup.find_all('div', class_='wprm-recipe-instruction-text')
 
         ingredients, instructions = [], []
-
+        id_ = 0
         for tag in ingredient_tags:
             amount = tag.find('span', class_='wprm-recipe-ingredient-amount')
             unit = tag.find('span', class_='wprm-recipe-ingredient-unit')
@@ -133,9 +133,10 @@ class RecipeParser:
             notes = tag.find('span', class_='wprm-recipe-ingredient-notes')
 
             amount, unit, name, notes = [attr.get_text().lower() if attr else None for attr in [amount, unit, name, notes]]
-            print('amount, quzntity', amount, unit)
+            print('amount, quantity', amount, unit)
             quantity = self.ureg.Quantity(amount or 0, unit)
-            ingredients.append(Ingredient(quantity, name, self.ureg, self.nlp))
+            ingredients.append(Ingredient(quantity, name, id_, self.ureg, self.nlp))
+            id_ += 1
 
         instructions = ' '.join([tag.get_text() for tag in instruction_tags])
 
@@ -148,10 +149,11 @@ class RecipeParser:
 
 # ---- Ingredient parsing -----------------------------------------------------
 
-    def parse_ingredient(self, text):
+    def parse_ingredient(self, text, id_):
         """Parse an ingredient phrase into an Ingredient object.
         Args:
             text (string): the complete ingredient description e.g. '2 cups flour, sifted'
+            id_ (int): a unique identifier for the Ingredient object.
         Returns:
             Ingredient object
         """
@@ -222,7 +224,7 @@ class RecipeParser:
             '{num_pattern} ?(?P<remainder>(?P<unit>{word}) ?(?P<tail>.*))',
              text)
         if not quantity_a:
-            return Ingredient(self.ureg.Quantity(0), text, self.ureg, self.nlp)
+            return Ingredient(self.ureg.Quantity(0), text, id_, self.ureg, self.nlp)
 
         # match against range format
         quantity_b, remainder_b = match_number(
@@ -236,7 +238,7 @@ class RecipeParser:
                 (quantity_a.magnitude + quantity_b.magnitude) / 2,
                 quantity_b.units
             )
-            return Ingredient(avg_quantity, remainder_b, self.ureg, self.nlp)
+            return Ingredient(avg_quantity, remainder_b, id_, self.ureg, self.nlp)
 
         # match against alternate measurement format
         quantity_c, remainder_c = match_number(
@@ -246,10 +248,10 @@ class RecipeParser:
             # prefer measurements of mass; otherwise use the first measurement
             if (str(quantity_c.dimensionality) == '[mass]' and
                 str(quantity_a.dimensionality) != '[mass]'):
-                return Ingredient(quantity_c, remainder_c, self.ureg, self.nlp)
+                return Ingredient(quantity_c, remainder_c, id_, self.ureg, self.nlp)
             else:
-                return Ingredient(quantity_a, remainder_c, self.ureg, self.nlp)
+                return Ingredient(quantity_a, remainder_c, id_, self.ureg, self.nlp)
 
-        return Ingredient(quantity_a, remainder_a, self.ureg, self.nlp)
+        return Ingredient(quantity_a, remainder_a, id_, self.ureg, self.nlp)
     
     
