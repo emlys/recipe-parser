@@ -7,8 +7,6 @@ from django.http import HttpResponse, JsonResponse
 from .recipe_parser import RecipeParser
 
 
-API_KEY = 'AIzaSyChJO55OhJ6pVYpCBR1lw8EdIN5MCUBS50'
-SEARCH_ENGINE_ID = 'febc45db5bc3cbafd'
 parser = RecipeParser()
 
 
@@ -28,19 +26,9 @@ def find_and_parse_recipes(request):
 
     recipe = get_recipes(urls, parser)[0]
  
-    ingredients = {}
-
-    for ingredient in recipe.ingredients:
-        ingredient_dict = {}
-        ingredient_dict['magnitude'] = ingredient.quantity.magnitude
-        ingredient_dict['unit'] = str(ingredient.quantity.units)
-        ingredient_dict['name'] = ingredient.name
-        ingredients[ingredient.id] = ingredient_dict
-
-            
     response = JsonResponse({
-        'ingredients': ingredients,
-        'graph': [node.as_dict() for node in recipe.graph]
+        'ingredients': {ingredient.id: ingredient.as_dict() for ingredient in recipe.ingredients},
+        'graph': {node.id: node.as_dict() for node in recipe.graph}
     })
     response["Access-Control-Allow-Origin"] = "*"
     response["Access-Control-Allow-Methods"] = "GET, OPTIONS"

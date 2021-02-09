@@ -76,17 +76,10 @@ class Recipedia extends React.Component {
             console.log('json:', json);
             console.log(json.ingredients);
             console.log(json.steps);
-            let nodeMap = {};
-            const nodes = json.graph;
-            console.log('nodes:', nodes);
-            for (const node of nodes) {
-                console.log(node.name, node);
-                nodeMap[node.name] = node;
-            }
+
             this.setState({
                 'ingredients': json.ingredients,
-                'graph': json.graph,
-                'nodeMap': nodeMap });
+                'graph': json.graph });
         });
     }
 

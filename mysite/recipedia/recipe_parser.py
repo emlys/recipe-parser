@@ -76,8 +76,7 @@ class RecipeParser:
         if ingredient_tags and instruction_tags:
             print('found tags')
             # make a list of Ingredient objects
-            ingredients = [self.parse_ingredient(
-                i.get_text().strip()) for i in ingredient_tags]
+            ingredients = self.parse_ingredients([i.get_text().strip() for i in ingredient_tags])
             instructions_list = []
             # Make sure sentences are separated by a period to help spaCy out
             for i in instruction_tags:
@@ -148,6 +147,20 @@ class RecipeParser:
 
 
 # ---- Ingredient parsing -----------------------------------------------------
+
+    def parse_ingredients(self, phrases):
+        """Parse a list of phrases into a list of Ingredient objects.
+        Args:
+            phrases (list[string]): a list of ingredient descriptions
+        Returns:
+            list[Ingredient]: a list of Ingredient objects
+        """
+        ingredients = []
+        id_ = 0
+        for phrase in phrases:
+            ingredients.append(self.parse_ingredient(phrase, id_))
+            id_ += 1
+        return ingredients
 
     def parse_ingredient(self, text, id_):
         """Parse an ingredient phrase into an Ingredient object.

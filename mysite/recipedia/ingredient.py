@@ -8,9 +8,10 @@ import spacy
 from spacy import displacy
 
 from . import spacy_helpers
+from .node import Node
 
 
-class Ingredient:
+class Ingredient(Node):
 
     def __init__(self, quantity, name, id_, ureg, nlp):
         """
@@ -23,10 +24,9 @@ class Ingredient:
             ureg (pint.UnitRegistry instance): shared across all Ingredients
             nlp (spacy.Language): shared across all Ingredients
         """
+        super().__init__(id_)
         self.quantity = quantity
-        self.name = name.strip()
-        self.id = id_
-        self.ureg = ureg
+        self.name = name.strip().lower()  # ignore case and trailing whitespace
         self.nlp = nlp
 
         # percent of recipe by volume that this ingredient makes up
@@ -60,6 +60,14 @@ class Ingredient:
             if word in self.name:
                 count += 1
         return count
+
+    def as_dict(self):
+        """Return a dictionary representation of self, for JSON responses."""
+        return {
+            'name': self.name,
+            'magnitude': self.quantity.magnitude,
+            'unit': str(self.quantity.units)
+        }
 
 
     def __repr__(self):

@@ -47,15 +47,9 @@ class Recipe:
         # at the time they are instantiated.
         self.graph = []
 
-        self.ingredient_nodes = []
-        for index, ingredient in enumerate(self.ingredients):
-            n = Node(index)
-            n.ingredients.add(ingredient)
-            self.ingredient_nodes.append(n)
-        print(self.ingredient_nodes)
+        self.node_index = len(self.ingredients)
         self.current_ref = None
 
-        self.node_index = len(self.ingredient_nodes)
         for sentence in self.nlp(instructions).sents:
             sent, = sentence.as_doc().sents
             self.parse_steps(sent)
@@ -75,19 +69,12 @@ class Recipe:
         # Some steps have multiple clauses which should be treated as separate steps
         # Recursively parse any trailing clauses
         head, tail = sh.split_conjuncts(sent)
-        print('start:', head.start)
-        for word in head:
-            print(word)
-        #displacy.serve(head)
-
-        step = Step(head)
+        print(head)
 
         # Most sentences in recipes are commands
         # Ideally spacy will have identified the imperative verb as the sentence root
         if self.is_imperative(head.root):
 
-            step.set_verb(head.root.i)
-            
             # direct objects: the dobj of the verb and its conjugates, if any
             dobjs = sh.get_direct_objects(head.root)
             # prepositional objects: verb --prep--> _ --pobj--> noun
@@ -125,20 +112,20 @@ class Recipe:
             # infer that it's implicitly referring to the stored reference
             if pobjs and not dobjs:
                 print('inferring past ref')
-                all_matches.append(Match([], None, self.current_ref))
+                all_matches.append(Match([], self.current_ref))
                 is_step = True
 
             print('all matches:', all_matches)
             if is_step:
-                new_node = Node(
-                    index=self.node_index, 
-                    step=step,
-                    matches=all_matches,
-                    parents=[match.node for match in all_matches]
+                new_step = Step(
+                    id_=self.node_index, 
+                    span=head,
+                    verb_index=head.root.i,
+                    matches=all_matches
                 )
+                self.graph.append(new_step)
+                self.current_ref = new_step
                 self.node_index += 1
-                self.add_new_node(new_node)
-                self.current_ref = new_node
 
             # otherwise, the object of the sentence isn't a node
 
@@ -193,36 +180,35 @@ class Recipe:
 
         matches = []
         max_count = 0
-        print('name:', name)
+        print('name:', [word.lemma_ for word in name])
         # Find the node(s) with the best matching ingredients
         # Determined by how many of the words in the reference are in the ingredient name
-        for node in (self.ingredient_nodes + self.graph):
-            for ingredient in node.ingredients:
+        for ingredient in self.ingredients:
+            # compare by lemma
+            # lemma is the root form of the word
+            match_count = ingredient.num_matching_words([word.lemma_ for word in name])
+            print(ingredient.name, match_count)
+            if match_count > max_count:
+                matches = [Match(name, ingredient)]
+                max_count = match_count
+            elif match_count == max_count:
+                matches.append(Match(name, ingredient))
+
+        for step in self.graph:
+            for ingredient in step.ingredients:
                 # compare by lemma
                 # lemma is the root form of the word
                 match_count = ingredient.num_matching_words([word.lemma_ for word in name])
                 print(ingredient.name, match_count)
                 if match_count > max_count:
-                    matches = [Match(name, ingredient, node)]
+                    matches = [Match(name, step)]
                     max_count = match_count
                 elif match_count == max_count:
-                    matches.append(Match(name, ingredient, node))
+                    matches.append(Match(name, step))
 
         # make this return a list of matches
         print('matches:', matches)
         return matches
-
-    def add_new_node(self, node):
-        """
-        Insert a node into the graph
-
-        Parameters:
-            node: a Node to insert
-        """
-        print('adding new node')
-        self.graph.append(node)
-        self.current_ref = node
-
 
 
     def best_matching_node(self, token):
@@ -249,21 +235,26 @@ class Recipe:
 
 class Match:
 
-    def __init__(self, words, target, node):
+    def __init__(self, words, target_node):
         """Initialize a match from words in the instructions to an ingredient.
 
         Args:
             words (list[token]): the tokens of an instruction step that match
-            target (int): the ingredient index that the text matches
+            target_node: the node (Step or Ingredient) that the text matches
         """
         self.words = words
-        self.target = target
-        self.node = node
+        self.target_node = target_node
 
     def __repr__(self):
-        return 'Match!' + ' '.join([word.text for word in self.words]) + ':' + str(self.target)
+        return 'Match!' + ' '.join([word.text for word in self.words]) + ':' + str(self.target_node)
 
 
+class SingleSet(set):
+    """A set that complains if you try to add an item that's already in it."""
+    def add(self, value):
+        if value in self:
+            raise ValueError(f'Value {value} already in this set!')
+        super().add(value)  # call the parent class add method
 
 
 
