@@ -12,6 +12,8 @@ html {
     min-height: 100%;
     width: 100%;
     background-color: #f5e7a8;
+    color: #000033;
+    border-color: #000033;
     font-family: 'Josefin Sans';
     margin: 0;
     padding: 0;
@@ -19,7 +21,7 @@ html {
 
 .bottom {
     display: flex;
-    justify-content: space-around;
+    justify-content: flex-start;
     flex-direction: row;
     flex-grow: 1;
     height: 100%;
@@ -30,10 +32,9 @@ html {
 .recipe {
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
-    width: 50%;
+    width: 45%;
     height: 100%;
-    text-align: right;
+    margin-left: 1em;
 }
 
 .divider {
@@ -42,12 +43,40 @@ html {
     margin: 0.5em;
 }
 
+.ingredient {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 0.3em;
+}
+
+.ingredient-magnitude {
+    white-space: nowrap;
+    text-align: left;
+    padding-right: 0.2em;
+}
+
+.ingredient-name {
+    text-align: right;
+    flex-shrink: 0;
+    /*white-space: nowrap;*/
+}
+
+.spacer {
+    overflow: hidden;
+    flex-grow: 10;
+    flex-shrink: 10;
+    white-space: nowrap
+}
+
 .graph {
     width: 50%;
     z-index: 10;
 }
 
-.recipe-item {
+.step {
+    text-align: right;
     padding: 0.5em;
 }
 
@@ -101,7 +130,6 @@ h2 {
     height: 100%;
     width: 2em;
     background-color: transparent;
-
 }
 
 .search-container {
@@ -109,16 +137,30 @@ h2 {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    height: 2em;
+    height: 2.5em;
     width: 30em;
     padding: 0em;
     margin: 1em;
-    border: 4px solid black;
-    border-radius: 12px;
+    border: 4px solid;
+    border-radius: 25px;
     background-color: #fffcea;
 }
 
-.hovered-label {
-    font-weight: bold;
-    text-decoration: underline;
+.footer {
+    display: flex;
+    height: 5em;
+    width: 100%;
+    background-color: #efd976;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid white;
+}
+
+.footer-item {
+    margin: 2em;
+}
+
+a {
+    text-decoration: none;
+    color: white;
 }
