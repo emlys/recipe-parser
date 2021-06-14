@@ -3,9 +3,8 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter, Route, Link } from 'react-router-dom';
 import './index.css';
 
-import Recipe from './tree.jsx';
+import Recipe from './Recipe.js';
 import About from './about.js';
-console.log('BrowserRouter:', BrowserRouter);
 
 
 class SearchBar extends React.Component {
@@ -17,16 +16,16 @@ class SearchBar extends React.Component {
     render() {
         return (
             <form className="search-container" onSubmit={ this.props.handleSubmit }>
-                <input 
-                    id="search_bar" 
+                <input
+                    id="search_bar"
                     className="search-bar"
-                    type="text" 
-                    value={this.props.value} 
+                    type="text"
+                    value={this.props.value}
                     placeholder="Search for a food, like mac 'n cheese..."
-                    onChange={this.props.handleChange} 
+                    onChange={this.props.handleChange}
                 />
                 <button className="search-submit" type="submit">
-                    <i className="material-icons mdc-button__icon" 
+                    <i className="material-icons mdc-button__icon"
                        aria-hidden="true">search</i>
                 </button>
             </form>
@@ -41,15 +40,16 @@ class Footer extends React.Component {
         return (
             <div className="footer">
                 <Link to="/about" className="footer-item">About</Link>
-                <a href="https://github.com/emlys/recipe-parser" className="footer-item">GitHub</a>
+                <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href="https://github.com/emlys/recipe-parser"
+                    className="footer-item">GitHub</a>
                 <Link to="/" className="footer-item">Contact</Link>
             </div>
         );
     }
 }
-
-
-
 
 
 class Recipedia extends React.Component {
@@ -82,38 +82,44 @@ class Recipedia extends React.Component {
 
     handleSubmit(event) {
         event.preventDefault();
-        console.log('handle submit');
 
         const search_url = 'http://127.0.0.1:8000/recipedia/search?query=';
         fetch(search_url + this.state.value)
         .then(res => res.json())
         .then(json => {
             this.setState({
-                ingredients: json.ingredients,
-                steps: json.steps,
-                graph: json.graph,
-                test: 'test!',
-                extras: json.extras });
+                ingredients: json.ingredient_ids,
+                steps: json.step_ids,
+                graph: json.nodes,
+                fullText: json.full_text
+            });
         });
     }
 
     render() {
-        console.log('state:', this.state);
+        console.log('rendering main page');
+        let recipe = null;
+
+        if (this.state.steps.length) {
+            recipe = (
+                <Recipe
+                    ingredients={this.state.ingredients}
+                    steps={this.state.steps}
+                    graph={this.state.graph || []}
+                    windowSize={[this.state.width, this.state.height]}
+                    fullText={this.state.fullText} />
+            );
+        }
 
         const page = (
             <div className="page">
                 <h1 className="header">Recipedia</h1>
                 <h2>a recipe synthesizer</h2>
-                <SearchBar 
+                <SearchBar
                     value={this.state.value}
                     handleChange={this.handleChange}
                     handleSubmit={this.handleSubmit} />
-                <Recipe 
-                    ingredients={this.state.ingredients}
-                    steps={this.state.steps}
-                    graph={this.state.graph || []}
-                    extras={this.state.extras || []}
-                    windowSize={[this.state.width, this.state.height]} />
+                {recipe}
                 <Footer />
             </div>
         );
@@ -122,7 +128,7 @@ class Recipedia extends React.Component {
             page
         );
 
-        
+
     }
 }
 
