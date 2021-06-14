@@ -5,7 +5,7 @@ import spacy
 from bs4 import BeautifulSoup
 
 from recipedia.ingredient import Ingredient
-from recipedia.recipe import Recipe
+from recipedia.recipe2 import Recipe
 
 headers = {'User-Agent': 'Mozilla/5.0 (compatible)'}
 class RecipeParser:
@@ -26,7 +26,7 @@ class RecipeParser:
 
         Pages made with WordPress Recipe Maker and certain popular recipe
         websites are supported.
-        
+
         Args:
             url: URL of webpage to parse
         Returns:
@@ -34,10 +34,6 @@ class RecipeParser:
         """
         # get what's between the second and third slashes
         domain = url.split('/')[2]
-        print(url)
-        print(url.split('/'))
-        print(domain)
-        print(domain == 'www.epicurious.com')
         response = requests.get(url, headers=headers)
         if response.status_code not in [200, 201]:
             print(f'GET request to {url} failed: code {response.status_code}')
@@ -62,19 +58,15 @@ class RecipeParser:
             instruction_tags = soup.find(class_='recipe-method').find_all('p')
         elif domain == 'www.thespruceeats.com':
             ingredient_tags = soup.find_all('li', class_='ingredient')
-            instruction_tags = soup.find(class_='comp section--instructions section')
+            instruction_tags = soup.find(class_='comp section--instructions section').find_all('p', class_='comp mntl-sc-block mntl-sc-block-html')
         elif domain == 'www.epicurious.com':
-            print(soup)
-            print(soup.find(class_='comp section--instructions section'))
             ingredient_tags = soup.find_all('li', class_='ingredient')
             instruction_tags = soup.find_all('p', class_='preparation_step')
         elif domain == 'www.food.com':
             ingredient_tags = soup.find_all('div', class_='recipe-ingredients__ingredient')
             instruction_tags = soup.find_all('li', class_='recipe-directions__step')
 
-        print(ingredient_tags, instruction_tags)
         if ingredient_tags and instruction_tags:
-            print('found tags')
             # make a list of Ingredient objects
             ingredients = self.parse_ingredients([i.get_text().strip() for i in ingredient_tags])
             instructions_list = []
@@ -85,7 +77,7 @@ class RecipeParser:
                     text += '.'
                 instructions_list.append(text)
             instructions = ' '.join(instructions_list)
-            # Replace all colons and semicolons with periods. spaCy seems to do 
+            # Replace all colons and semicolons with periods. spaCy seems to do
             # better when these are separate sentences.
             instructions = instructions.replace(';', '.')
             instructions = instructions.replace(':', '.')
@@ -134,7 +126,8 @@ class RecipeParser:
             amount, unit, name, notes = [attr.get_text().lower() if attr else None for attr in [amount, unit, name, notes]]
             print('amount, quantity', amount, unit)
             quantity = self.ureg.Quantity(amount or 0, unit)
-            ingredients.append(Ingredient(quantity, name, id_, self.ureg, self.nlp))
+            ingredients.append(self.parse_ingredient(f'{amount} {unit} {name} {notes}', id_))
+            # ingredients.append(Ingredient(quantity, name, id_, self.ureg, self.nlp))
             id_ += 1
 
         instructions = ' '.join([tag.get_text() for tag in instruction_tags])
@@ -255,7 +248,7 @@ class RecipeParser:
 
         # match against alternate measurement format
         quantity_c, remainder_c = match_number(
-            ' ?\(({num_pattern}) ?(?P<unit>{word})?\)(?P<tail>(?P<remainder>.*))', 
+            ' ?\(({num_pattern}) ?(?P<unit>{word})?\)(?P<tail>(?P<remainder>.*))',
             remainder_a)
         if quantity_c:
             # prefer measurements of mass; otherwise use the first measurement
@@ -266,5 +259,4 @@ class RecipeParser:
                 return Ingredient(quantity_a, remainder_c, id_, self.ureg, self.nlp)
 
         return Ingredient(quantity_a, remainder_a, id_, self.ureg, self.nlp)
-    
-    
+

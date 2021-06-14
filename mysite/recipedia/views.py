@@ -9,10 +9,17 @@ from .recipe_parser import RecipeParser
 
 parser = RecipeParser()
 
+ACCESS_CONTROL_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Max-Age': '1000',
+    'Access-Control-Allow-Headers': 'X-Requested-With, Content-Type'
+}
 
 
 def index(request):
     return HttpResponse("Hello world!")
+
 
 def find_and_parse_recipes(request):
     print(request)
@@ -25,15 +32,40 @@ def find_and_parse_recipes(request):
         urls = search(query)
 
     recipe = get_recipes(urls, parser)[0]
- 
+
     response = JsonResponse({
-        'ingredients': {ingredient.id: ingredient.as_dict() for ingredient in recipe.ingredients},
-        'graph': {node.id: node.as_dict() for node in recipe.graph}
+        'ingredients': [node.id for node in recipe.ingredients],
+        'steps': [node.id for node in recipe.graph],
+        'extras': [extra.id for extra in recipe.extra_info],
+        'graph': {node.id: node.as_dict() for node in recipe.ingredients + recipe.graph + recipe.extra_info},
+        **ACCESS_CONTROL_HEADERS
     })
-    response["Access-Control-Allow-Origin"] = "*"
-    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-    response["Access-Control-Max-Age"] = "1000"
-    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+
+    return response
+
+
+def find_and_parse_recipes2(request):
+    print(request)
+    print(request.GET)
+
+    query = request.GET['query']
+    if query.startswith('http'):
+        urls = [query]
+    else:
+        urls = search(query)
+
+    recipe = get_recipes(urls, parser)[0]
+
+    response = JsonResponse({
+        'ingredient_ids': [node.id for node in recipe.ingredients],
+        'step_ids': [node.id for node in recipe.graph],
+        'nodes': {node.id: node.as_dict() for node in recipe.ingredients + recipe.graph},
+        'full_text': [token.text for token in recipe.document],
+    })
+    response['Access-Control-Allow-Origin'] = '*'
+    response['Access-Control-Allow-Methods'] = 'GET, OPTIONS',
+    response['Access-Control-Max-Age'] = '1000',
+    response['Access-Control-Allow-Headers'] = 'X-Requested-With, Content-Type'
     return response
 
 
@@ -47,7 +79,7 @@ def search(query, number=10):
         - entireweb API
 
     Args:
-        query (string): term to search 
+        query (string): term to search
         number (int): number of search results to get
 
     Returns:
@@ -77,7 +109,7 @@ def get_recipes(urls, parser):
     for url in urls:
         recipes.append(parser.parse(url))
     return recipes
-        
+
 
 
 

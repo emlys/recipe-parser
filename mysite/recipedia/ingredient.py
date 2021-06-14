@@ -11,6 +11,9 @@ from . import spacy_helpers
 from .node import Node
 
 
+INGREDIENT_TYPE = 'ingredient'
+
+
 class Ingredient(Node):
 
     def __init__(self, quantity, name, id_, ureg, nlp):
@@ -18,7 +21,7 @@ class Ingredient(Node):
         Represent a recipe ingredient with its name and amount
 
         Args:
-            quantity (pint.Quantity): 
+            quantity (pint.Quantity):
             name (string): describes the ingredient, e.g. 'macaroni pasta'
             id_ (int): unique identifier for this ingredient
             ureg (pint.UnitRegistry instance): shared across all Ingredients
@@ -57,13 +60,15 @@ class Ingredient(Node):
     def num_matching_words(self, words):
         count = 0
         for word in words:
-            if word in self.name:
+            if len(word) > 2 and word in self.name:
                 count += 1
         return count
 
     def as_dict(self):
         """Return a dictionary representation of self, for JSON responses."""
         return {
+            'id': self.id,
+            'type': INGREDIENT_TYPE,
             'name': self.name,
             'magnitude': self.quantity.magnitude,
             'unit': str(self.quantity.units)

@@ -2,10 +2,14 @@ from .node import Node
 from .ingredient import Ingredient
 
 
+STEP_TYPE = 'step'
+
+
 class Step(Node):
 
     def __init__(self, id_, span, verb_index, matches):
-        """Instantiate a Step.
+        """
+        Instantiate a Step.
         Args:
             id_ (int): an identifier that's unique among all Nodes in the Recipe
             span (spacy.Span): the text of the step
@@ -18,7 +22,7 @@ class Step(Node):
         self.matches = matches
 
         self.parents = set([match.target_node for match in matches])
-        self.ingredients = set()  
+        self.ingredients = set()
         for parent in self.parents:
             print(type(parent))
             if type(parent) is Ingredient:
@@ -28,7 +32,8 @@ class Step(Node):
 
 
     def set_verb(self, token_index):
-        """Mark a token of this Step as the main verb.
+        """
+        Mark a token of this Step as the main verb.
         Args:
             token_index (int): index of token to label in self.span
         Returns:
@@ -42,21 +47,33 @@ class Step(Node):
     def max_total_similarity(self, token) -> float:
         return max(token.similarity(i.span) for i in self.ingredients)
 
-    def as_dict(self) :
-        """Return self represented as a dictionary.
+    def as_dict(self):
+        """
+        Return self represented as a dictionary.
 
         This is used in creating JSON web responses.
         """
+        matched_indices = [word.i for match in self.matches for word in match.words]
+        verb_child_phrases = []
+        for token in self.span.doc[self.verb_index].children:
+            if token.i not in matched_indices and not token.is_punct:
+                verb_child_phrases.append([token.left_edge.i, token.right_edge.i])
+
         return {
+            'id': self.id,
+            'type': STEP_TYPE,
             'ingredients': [ingredient.id for ingredient in self.ingredients],
             'parents': [parent.id for parent in self.parents],
-            'tokens': {token.i: token.text for token in self.span},
+            'start_index': self.span.start,
+            'end_index': self.span.end - 1,
             'verb_index': self.verb_index,
-            'labels': {
-                match.target_node.id: [word.i for word in match.words] 
-                    for match in self.matches
+            'labeled_ingredients': {
+                match.target_node.id: [word.i for word in match.words]
+                for match in self.matches
             },
-            'full_text': self.span.text
+            'method': {
+                self.verb_index: verb_child_phrases
+            }
         }
 
     def __repr__(self):

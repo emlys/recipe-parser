@@ -43,14 +43,26 @@ def split_conjuncts(span: Span):
 
         # Split around the coordinating conjunction, if there is one
         if conj.nbor(-1).dep_ == 'cc':
-            head = span.doc[: conj.i - 1]
+            head = span.doc[span.start : conj.i - 1]
         else:
-             head = span.doc[: conj.i]
+             head = span.doc[span.start : conj.i]
 
         tail = span.doc[conj.i :]
-
+        print(span, ':', head, ':', tail)
         return head, tail
 
+    else:
+        return span, None
+
+
+def split_conjuncts2(span: Span):
+    # Get the first conjunct
+    conjs = get_shallow_conjuncts(span.root)
+
+    if conjs:
+        head = span.doc[span.start : conjs[0].left_edge.i]
+        tail = span.doc[conjs[0].left_edge.i:]
+        return head, tail
     else:
         return span, None
 

@@ -1,8 +1,5 @@
 import pint
-import matplotlib.pyplot as plt
 import numpy as np
-import os
-import re
 import spacy
 from spacy import displacy
 
@@ -32,8 +29,6 @@ class Recipe:
             ureg: pint.UnitRegistry object, must be shared among all Ingredients
             nlp: spacy.Language object
         """
-
-
         self.ingredients = ingredients
         self.instructions = instructions
         self.ureg = ureg
@@ -45,44 +40,61 @@ class Recipe:
         # New Nodes may only be connected to Nodes that are in this list
         # at the time they are instantiated.
         self.graph = []
-        self.extra_info = []
 
-        self.node_index = len(self.ingredients)
-        self.current_ref = None
+        self.document = self.nlp(instructions)
 
-        for sentence in self.nlp(instructions).sents:
-            sent, = sentence.as_doc().sents
-            self.parse_steps(sent)
+        node_id = len(ingredients)
+        current_ref = None
+        for clause in self.yield_clauses(self.document):
+            step = self.parse_step(clause, node_id, current_ref)
+            node_id += 1
+            current_ref = step
+            self.graph.append(step)
 
         print(self.graph)
 
-    def parse_steps(self, sent):
+    def yield_clauses(self, doc):
+        """Iterate through clauses in a document.
+
+        Args:
+            doc (spaCy.Document): document to iterate
+
+        Yields: spacCy.Span s
+
         """
-        Attempt to add a node joining ingredients for each recipe step
+        def yield_clauses_from_sentence(sent):
+            head, tail = sh.split_conjuncts2(sentence)
+            yield head
+            if tail:
+                yield_clauses_from_sentence(tail)
 
-        Parameters:
-            sent: spacy.Span object representing a recipe sentence
+        for sentence in doc.sents:
+            # Some steps have multiple clauses which should be treated as
+            # separate steps. Recursively parse any trailing clauses
+            for clause in yield_clauses_from_sentence(sentence):
+                yield clause
+
+    def parse_step(self, clause, node_id, current_ref):
         """
+        Parse a clause into a step node.
 
-        root = sent.root
+        Args:
+            clause (spacy.Span): a complete recipe clause
+            node_id (int): a unique ID to give the node
 
-        # Some steps have multiple clauses which should be treated as separate steps
-        # Recursively parse any trailing clauses
-        head, tail = sh.split_conjuncts(sent)
-        from spacy import displacy
-        print(head)
-
-        is_step = False
+        Returns:
+            Step node object
+        """
         # Most sentences in recipes are commands
         # Ideally spacy will have identified the imperative verb as the sentence root
-        if self.is_imperative(head.root):
+        all_matches = []
+        if self.is_imperative(clause.root):
 
             # direct objects: the dobj of the verb and its conjugates, if any
-            dobjs = sh.get_direct_objects(head.root)
+            dobjs = sh.get_direct_objects(clause.root)
             # prepositional objects: verb --prep--> _ --pobj--> noun
-            pobjs = sh.get_prepositional_objects(head.root)
+            pobjs = sh.get_prepositional_objects(clause.root)
             print(dobjs, pobjs)
-            all_matches = []
 
             # has dobj?   dobj matches?  has pobj?   pobj matches?
             #  yes           yes           yes           yes       use both
@@ -101,7 +113,6 @@ class Recipe:
             for dobj in dobjs:
                 matches = self.identify_object(dobj)
                 if matches:
-                    is_step = True
                     all_matches += matches
 
             for pobj in pobjs:
@@ -111,32 +122,15 @@ class Recipe:
 
             # infer that it's implicitly referring to the stored reference
             if pobjs and not dobjs:
-                all_matches.append(Match([], self.current_ref))
-                is_step = True
+                all_matches.append(Match([], current_ref))
 
-            if is_step:
-                new_step = Step(
-                    id_=self.node_index,
-                    span=head,
-                    verb_index=head.root.i,
-                    matches=all_matches,
-                )
-                self.graph.append(new_step)
-                self.current_ref = new_step
-                self.node_index += 1
-
-            # otherwise, the object of the sentence isn't a node
-
-        if not is_step:
-            extra = ExtraInfo(head, self.node_index)
-            self.extra_info.append(extra)
-            self.node_index += 1
-
-
-        if tail:
-                self.parse_steps(tail)
-
-
+        new_step = Step(
+            id_=node_id,
+            span=clause,
+            verb_index=clause.root.i,
+            matches=all_matches,
+        )
+        return new_step
 
     def is_imperative(self, token):
         """Check if a token is an imperative verb.
@@ -212,7 +206,6 @@ class Recipe:
         # make this return a list of matches
         return matches
 
-
     def best_matching_node(self, token):
 
         scores = [node.max_base_similarity(token) for node in self.graph]
@@ -223,25 +216,8 @@ class Recipe:
             # if all the scores are low, the token likely isn't an ingredient
             return None
 
-
     def __str__(self):
         return self.text
-
-
-
-class ExtraInfo:
-
-    def __init__(self, span, id_):
-        self.span = span
-        self.id = id_
-
-    def as_dict(self):
-        return {
-            'id': self.id,
-            'tokens': {token.i: token.text for token in self.span},
-            'full_text': self.span.text
-        }
-
 
 
 class Match:
