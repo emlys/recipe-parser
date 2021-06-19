@@ -37,6 +37,12 @@ html {
     margin-left: 1em;
 }
 
+.recipe-text {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
 .divider {
     height: 0.2em;
     background-color: black;
