@@ -88,8 +88,6 @@ class Recipedia extends React.Component {
         .then(res => res.json())
         .then(json => {
             this.setState({
-                ingredients: json.ingredient_ids,
-                steps: json.step_ids,
                 graph: json.nodes,
                 fullText: json.full_text
             });
@@ -100,11 +98,9 @@ class Recipedia extends React.Component {
         console.log('rendering main page');
         let recipe = null;
 
-        if (this.state.steps.length) {
+        if (this.state.graph) {
             recipe = (
                 <Recipe
-                    ingredients={this.state.ingredients}
-                    steps={this.state.steps}
                     graph={this.state.graph || []}
                     windowSize={[this.state.width, this.state.height]}
                     fullText={this.state.fullText} />

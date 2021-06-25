@@ -1,13 +1,10 @@
 import './index.css';
 import React, { useState, useCallback } from 'react';
 
-import RecipeText from './RecipeText.js';
 import Ingredient from './Ingredient.js';
-import IngredientsGraph from './IngredientsGraph';
 import MeasuredDiv from './MeasuredDiv';
-
-var Connector = require('paths-js/connector');
-
+import RecipeGraph from './RecipeGraph.js';
+import RecipeText from './RecipeText.js';
 
 // window size controls text position
 // ingredient and step text position controls position of nodes
@@ -25,11 +22,17 @@ class Recipe extends React.Component {
         acc[key] = false;
         return acc;
       }, {}),
+      nodeIsHovered: Object.keys(props.graph).reduce((acc, key) => {
+        acc[key] = false;
+        return acc;
+      }, {}),
     };
 
     this.updateBBox = this.updateBBox.bind(this);
     this.onMouseEnterWord = this.onMouseEnterWord.bind(this);
     this.onMouseLeaveWord = this.onMouseLeaveWord.bind(this);
+    this.onMouseEnterNode = this.onMouseEnterNode.bind(this);
+    this.onMouseLeaveNode = this.onMouseLeaveNode.bind(this);
   }
 
   updateBBox(bbox, index) {
@@ -50,18 +53,29 @@ class Recipe extends React.Component {
     this.setState({wordIsHovered: wordIsHovered});
   }
 
+  onMouseEnterNode(key) {
+    const nodeIsHovered = this.state.nodeIsHovered;
+    nodeIsHovered[key] = true;
+    this.setState({nodeIsHovered: nodeIsHovered});
+  }
+
+  onMouseLeaveNode(key) {
+    const nodeIsHovered = this.state.nodeIsHovered;
+    nodeIsHovered[key] = false;
+    this.setState({nodeIsHovered: nodeIsHovered});
+  }
+
   render() {
     const {
-      ingredients,
-      steps,
       graph,
-      windowSize,
-      fullText
+      fullText,
+      windowSize
     } = this.props;
 
     const {
       bboxMap,
-      wordIsHovered
+      wordIsHovered,
+      nodeIsHovered
     } = this.state;
 
 
@@ -73,10 +87,15 @@ class Recipe extends React.Component {
 
     for (const key of Object.keys(graph)) {
       if (graph[key].type === 'step') {
-        for (const ingredientID of Object.keys(graph[key].labeled_ingredients)) {
-          for (const tokenIndex of graph[key].labeled_ingredients[ingredientID]) {
-            words[tokenIndex].compoundWords = graph[key].labeled_ingredients[ingredientID];
-            words[tokenIndex].ingredientID = ingredientID;
+        for (const nodeIdObj of graph[key].node_ids) {
+          for (const tokenIndex of nodeIdObj.tokens) {
+            words[tokenIndex].compoundWords = nodeIdObj.node_id;
+
+            if (words[tokenIndex].ingredientIDs) {
+              words[tokenIndex].ingredientIDs.push(nodeIdObj.node_id);
+            } else {
+              words[tokenIndex].ingredientIDs = [nodeIdObj.node_id];
+            }
           }
         }
         words[graph[key].verb_index].isVerb = true;
@@ -88,11 +107,13 @@ class Recipe extends React.Component {
     let wordIsBold = {};
     let wordIsUnderlined = {};
     let wordIsItalic = {};
+    let wordHighlightColor = {};
     let ingredientIsBold = {};
+    let nodeIsBold = {};
 
     // Make every word with an ingredient label be bold
     for (const key of Object.keys(words)) {
-      if (words[key] && words[key].ingredientID) {
+      if (words[key] && words[key].ingredientIDs) {
         wordIsBold[key] = true;
       }
       if (words[key] && words[key].isVerb) {
@@ -100,11 +121,20 @@ class Recipe extends React.Component {
       }
     }
 
+    for (const key of Object.keys(graph)) {
+      for (let wordIndex = graph[key].start_index; wordIndex <= graph[key].end_index; wordIndex++) {
+        console.log('highlighting word', wordIndex)
+        wordHighlightColor[wordIndex] = 'rgba(220, 50, 183, 0.34)';
+      }
+    }
+
     // For every hovered word, if the word has an ingredient label,
     // make the corresponding ingredient be bold
     for (const key of Object.keys(wordIsHovered)) {
-      if (wordIsHovered[key] === true && words[key] && words[key].ingredientID) {
-        ingredientIsBold[words[key].ingredientID] = true;
+      if (wordIsHovered[key] === true && words[key] && words[key].ingredientIDs) {
+        for (const ingredientID of words[key].ingredientIDs) {
+          ingredientIsBold[ingredientID] = true;
+        }
 
         wordIsUnderlined[key] = true;
         for (const compoundWordID of words[key].compoundWords) {
@@ -113,29 +143,44 @@ class Recipe extends React.Component {
       }
     }
 
-    let ingredientDivs = [];
+    for (const key of Object.keys(nodeIsHovered)) {
+      // If a node is hovered, make its outline bold
+      if (nodeIsHovered[key] === true) {
+        nodeIsBold[key] = true;
 
-    for (const index of ingredients) {
-      const ingredient = graph[index];
-      const mdiv = (
-        <MeasuredDiv
-          updateFunc={this.updateBBox}
-          updateDeps={[windowSize]}
-          index={'b' + index}
-          content={
-            <Ingredient
-              magnitude={ingredient.magnitude}
-              unit={ingredient.unit}
-              name={ingredient.name}
-              isBold={ingredientIsBold[index]}
-            />
-          }
-        />
-      );
-      ingredientDivs.push(mdiv);
+
+        for (let wordIndex = graph[key].start_index; wordIndex <= graph[key].end_index; wordIndex++) {
+          console.log('highlighting word', wordIndex)
+          wordHighlightColor[wordIndex] = 'rgba(220, 50, 183, 0.34)';
+        }
+      }
     }
 
+    let ingredientDivs = [];
 
+    for (const index of Object.keys(graph)) {
+      if (graph[index].type === 'ingredient') {
+        const ingredient = graph[index];
+        const mdiv = (
+          <MeasuredDiv
+            updateFunc={this.updateBBox}
+            updateDeps={[windowSize]}
+            index={'b' + index}
+            content={
+              <Ingredient
+                magnitude={ingredient.magnitude}
+                unit={ingredient.unit}
+                name={ingredient.name}
+                isBold={ingredientIsBold[index]}
+              />
+            }
+          />
+        );
+        ingredientDivs.push(mdiv);
+      }
+    }
+
+    console.log('highlights:', wordHighlightColor)
     return (
       <React.Fragment>
       <div className="bottom">
@@ -147,9 +192,16 @@ class Recipe extends React.Component {
             isBold={wordIsBold}
             isUnderlined={wordIsUnderlined}
             isItalic={wordIsItalic}
+            highlightColor={wordHighlightColor}
             onMouseEnterWord={this.onMouseEnterWord}
             onMouseLeaveWord={this.onMouseLeaveWord} />
         </div>
+        <RecipeGraph
+          nodes={graph}
+          isBold={nodeIsBold}
+          windowSize={windowSize}
+          onMouseEnterNode={this.onMouseEnterNode}
+          onMouseLeaveNode={this.onMouseLeaveNode} />
       </div>
       </React.Fragment>
     );

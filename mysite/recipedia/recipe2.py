@@ -42,16 +42,16 @@ class Recipe:
         self.graph = []
 
         self.document = self.nlp(instructions)
+        # displacy.serve(self.document)
 
         node_id = len(ingredients)
         current_ref = None
         for clause in self.yield_clauses(self.document):
             step = self.parse_step(clause, node_id, current_ref)
-            node_id += 1
-            current_ref = step
-            self.graph.append(step)
-
-        print(self.graph)
+            if step is not None:
+                node_id += 1
+                current_ref = step
+                self.graph.append(step)
 
     def yield_clauses(self, doc):
         """Iterate through clauses in a document.
@@ -63,15 +63,20 @@ class Recipe:
 
         """
         def yield_clauses_from_sentence(sent):
-            head, tail = sh.split_conjuncts2(sentence)
+            head, tail = sh.split_conjuncts2(sent)
+            print('head, tail:', head, '!!!', tail)
             yield head
             if tail:
-                yield_clauses_from_sentence(tail)
+                for cl in yield_clauses_from_sentence(tail):
+                    print(cl)
+                    yield cl
 
         for sentence in doc.sents:
+            print('sentence:', sentence)
             # Some steps have multiple clauses which should be treated as
             # separate steps. Recursively parse any trailing clauses
             for clause in yield_clauses_from_sentence(sentence):
+                print('yielding clause:', clause)
                 yield clause
 
     def parse_step(self, clause, node_id, current_ref):
@@ -85,6 +90,7 @@ class Recipe:
         Returns:
             Step node object
         """
+        print('parsing clause:', clause)
         # Most sentences in recipes are commands
         # Ideally spacy will have identified the imperative verb as the sentence root
         all_matches = []
@@ -94,7 +100,8 @@ class Recipe:
             dobjs = sh.get_direct_objects(clause.root)
             # prepositional objects: verb --prep--> _ --pobj--> noun
             pobjs = sh.get_prepositional_objects(clause.root)
-            print(dobjs, pobjs)
+            print('dobjs:', dobjs)
+            print('pobjs:', pobjs)
 
             # has dobj?   dobj matches?  has pobj?   pobj matches?
             #  yes           yes           yes           yes       use both
@@ -112,25 +119,28 @@ class Recipe:
 
             for dobj in dobjs:
                 matches = self.identify_object(dobj)
-                if matches:
-                    all_matches += matches
+                for name, node in matches:
+                    all_matches.append(Match(name, node, 'dobj'))
 
             for pobj in pobjs:
                 matches = self.identify_object(pobj)
-                if matches:
-                    all_matches += matches
+                for name, node in matches:
+                    all_matches.append(Match(name, node, 'pobj'))
 
             # infer that it's implicitly referring to the stored reference
-            if pobjs and not dobjs:
-                all_matches.append(Match([], current_ref))
+            if not dobjs:
+                all_matches.append(Match([], current_ref, 'implicit'))
+            print('matches:', all_matches)
+            if all_matches:
+                new_step = Step(
+                    id_=node_id,
+                    span=clause,
+                    verb_index=clause.root.i,
+                    matches=all_matches,
+                )
+                return new_step
 
-        new_step = Step(
-            id_=node_id,
-            span=clause,
-            verb_index=clause.root.i,
-            matches=all_matches,
-        )
-        return new_step
+        return None
 
     def is_imperative(self, token):
         """Check if a token is an imperative verb.
@@ -142,6 +152,9 @@ class Recipe:
         Returns:
             boolean: True if imperative, False if not
         """
+        print('is imperative?', token)
+        print(token.tag_)
+        print([child.dep_ == 'nsubj' for child in token.children])
         if (token.tag_ == 'VB' and
                 sum([child.dep_ == 'nsubj' for child in token.children]) == 0):
             return True
@@ -175,7 +188,6 @@ class Recipe:
                     min_index = child.i
 
         name.append(token)
-        print('identify', token)
 
         matches = []
         max_count = 0
@@ -184,24 +196,25 @@ class Recipe:
         for ingredient in self.ingredients:
             # compare by lemma
             # lemma is the root form of the word
-            match_count = ingredient.num_matching_words([word.lemma_.lower() for word in name])
-            print(ingredient.name, match_count)
+            match_count = ingredient.num_matching_words(
+                [word.lemma_.lower() for word in name])
             if match_count > max_count:
-                matches = [Match(name, ingredient)]
+                matches = [(name, ingredient)]
                 max_count = match_count
             elif match_count > 0 and match_count == max_count:
-                matches.append(Match(name, ingredient))
+                matches.append((name, ingredient))
 
         for step in self.graph:
             for ingredient in step.ingredients:
                 # compare by lemma
                 # lemma is the root form of the word
-                match_count = ingredient.num_matching_words([word.lemma_ for word in name])
+                match_count = ingredient.num_matching_words(
+                    [word.lemma_ for word in name])
                 if match_count > max_count:
-                    matches = [Match(name, step)]
+                    matches = [(name, step)]
                     max_count = match_count
                 elif match_count > 0 and match_count == max_count:
-                    matches.append(Match(name, step))
+                    matches.append((name, step))
 
         # make this return a list of matches
         return matches
@@ -222,26 +235,19 @@ class Recipe:
 
 class Match:
 
-    def __init__(self, words, target_node):
+    def __init__(self, words, target_node, match_type):
         """Initialize a match from words in the instructions to an ingredient.
 
         Args:
             words (list[token]): the tokens of an instruction step that match
-            target_node: the node (Step or Ingredient) that the text matches
+            target_node (Node): the node (Step or Ingredient) that the text matches
+            match_type (str): the type of match, one of 'dobj', 'pobj', or 'implicit'
         """
+        # source type: dobj | pobj | implicit
+        # target type: ingredient | output of previous step
         self.words = words
         self.target_node = target_node
+        self.type = match_type
 
     def __repr__(self):
         return 'Match!' + ' '.join([word.text for word in self.words]) + ':' + str(self.target_node)
-
-
-class SingleSet(set):
-    """A set that complains if you try to add an item that's already in it."""
-    def add(self, value):
-        if value in self:
-            raise ValueError(f'Value {value} already in this set!')
-        super().add(value)  # call the parent class add method
-
-
-

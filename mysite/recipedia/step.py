@@ -30,7 +30,6 @@ class Step(Node):
             else:
                 self.ingredients = self.ingredients.union(parent.ingredients)
 
-
     def set_verb(self, token_index):
         """
         Mark a token of this Step as the main verb.
@@ -53,11 +52,21 @@ class Step(Node):
 
         This is used in creating JSON web responses.
         """
-        matched_indices = [word.i for match in self.matches for word in match.words]
+        matched_indices = [
+            word.i for match in self.matches for word in match.words]
         verb_child_phrases = []
         for token in self.span.doc[self.verb_index].children:
             if token.i not in matched_indices and not token.is_punct:
-                verb_child_phrases.append([token.left_edge.i, token.right_edge.i])
+                verb_child_phrases.append(
+                    [token.left_edge.i, token.right_edge.i])
+
+        node_ids = []
+        for match in self.matches:
+            node_ids.append({
+                'tokens': [word.i for word in match.words],
+                'node_id': match.target_node.id,
+                'type': match.type
+            })
 
         return {
             'id': self.id,
@@ -67,16 +76,9 @@ class Step(Node):
             'start_index': self.span.start,
             'end_index': self.span.end - 1,
             'verb_index': self.verb_index,
-            'labeled_ingredients': {
-                match.target_node.id: [word.i for word in match.words]
-                for match in self.matches
-            },
-            'method': {
-                self.verb_index: verb_child_phrases
-            }
+            'node_ids': node_ids,
+            'method': {self.verb_index: verb_child_phrases}
         }
 
     def __repr__(self):
         return f'<{self.span.text if self.span else None}>{self.ingredients}'
-
-

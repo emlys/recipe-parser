@@ -1,7 +1,4 @@
 import requests
-import pprint
-from bs4 import BeautifulSoup
-from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 
 from .recipe_parser import RecipeParser
@@ -57,8 +54,6 @@ def find_and_parse_recipes2(request):
     recipe = get_recipes(urls, parser)[0]
 
     response = JsonResponse({
-        'ingredient_ids': [node.id for node in recipe.ingredients],
-        'step_ids': [node.id for node in recipe.graph],
         'nodes': {node.id: node.as_dict() for node in recipe.ingredients + recipe.graph},
         'full_text': [token.text for token in recipe.document],
     })
@@ -93,6 +88,7 @@ def search(query, number=10):
     urls = [result['link'] for result in results]
     return urls
 
+
 def get_recipes(urls, parser):
     """Turn a list of urls into a list of Recipe objects.
 
@@ -109,7 +105,3 @@ def get_recipes(urls, parser):
     for url in urls:
         recipes.append(parser.parse(url))
     return recipes
-
-
-
-

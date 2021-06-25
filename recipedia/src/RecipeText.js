@@ -21,7 +21,7 @@ class Span extends React.Component {
           fontWeight: (isBold ? 'bold' : ''),
           textDecoration: (isUnderlined ? 'underline' : ''),
           fontStyle: (isItalic ? 'italic' : ''),
-          backgroundColor: (highlightColor),
+          backgroundColor: highlightColor,
           whiteSpace: 'pre'}}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}>
@@ -89,7 +89,7 @@ class RecipeText extends React.Component {
           isBold={isBold[id]}
           isUnderlined={isUnderlined[id]}
           isItalic={isItalic[id]}
-          // highlightColor={highlightColor[id]}
+          highlightColor={highlightColor[id]}
           onMouseEnter={() => onMouseEnterWord(id)}
           onMouseLeave={() => onMouseLeaveWord(id)}
         />

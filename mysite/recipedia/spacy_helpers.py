@@ -2,21 +2,22 @@ from spacy.tokens import Span, Token
 #
 # Some helper functions that operate on spacy objects
 
-def get_all_conjuncts(token: Token) -> list:
-        """
-        Return all conjuncts of the token (words connected to it by conjunctions)
 
-        Parameters:
-            token: spacy Token (word)
-        Returns:
-            list of spacy Tokens
-        """
-        conjs = []
-        current = get_shallow_conjuncts(token)
-        while current:
-            conjs += current
-            current = get_shallow_conjuncts(current[0])
-        return conjs
+def get_all_conjuncts(token: Token) -> list:
+    """
+    Return all conjuncts of the token (words connected to it by conjunctions)
+
+    Parameters:
+        token: spacy Token (word)
+    Returns:
+        list of spacy Tokens
+    """
+    conjs = []
+    current = get_shallow_conjuncts(token)
+    while current:
+        conjs += current
+        current = get_shallow_conjuncts(current[0])
+    return conjs
 
 
 def get_shallow_conjuncts(token: Token) -> list:
@@ -43,11 +44,11 @@ def split_conjuncts(span: Span):
 
         # Split around the coordinating conjunction, if there is one
         if conj.nbor(-1).dep_ == 'cc':
-            head = span.doc[span.start : conj.i - 1]
+            head = span.doc[span.start: conj.i - 1]
         else:
-             head = span.doc[span.start : conj.i]
+            head = span.doc[span.start: conj.i]
 
-        tail = span.doc[conj.i :]
+        tail = span.doc[conj.i:]
         print(span, ':', head, ':', tail)
         return head, tail
 
@@ -58,10 +59,22 @@ def split_conjuncts(span: Span):
 def split_conjuncts2(span: Span):
     # Get the first conjunct
     conjs = get_shallow_conjuncts(span.root)
+    print('conjs:', conjs)
 
     if conjs:
-        head = span.doc[span.start : conjs[0].left_edge.i]
-        tail = span.doc[conjs[0].left_edge.i:]
+        tail_start = conjs[0].left_edge.i
+        head_end = conjs[0].left_edge.i - 1
+        # don't include coordinating conjunctions or punctuation
+        print('last token of head:',
+              span.doc[head_end], span.doc[head_end].is_punct, span.doc[head_end].tag_)
+        while span.doc[head_end].is_punct or span.doc[head_end].tag_ == 'CC':
+            print
+            head_end -= 1  # move one token to the left
+            print(span.doc[head_end])
+
+        # doc indexing is [inclusive: exclusive]
+        head = span.doc[span.start: head_end + 1]
+        tail = span.doc[tail_start: span.end]
         return head, tail
     else:
         return span, None
@@ -86,8 +99,10 @@ def get_direct_objects(token: Token) -> list:
             objs += get_all_conjuncts(d)
         return objs
 
+
 def and_conjuncts(token):
     return [token] + list(token.conjuncts)
+
 
 def get_prepositional_objects(token):
     """
@@ -137,6 +152,7 @@ def get_top_noun(span: Span):
     # there might not be a noun
     return None
 
+
 def get_all_nouns(span: Span):
     """
     Return a list of all nouns in the span
@@ -147,5 +163,3 @@ def get_all_nouns(span: Span):
         spacy Token object
     """
     return [token for token in span if token.pos_ in ['NOUN', 'PROPN']]
-
-

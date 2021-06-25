@@ -2,6 +2,9 @@ import './index.css';
 import React from 'react';
 
 import MeasuredDiv from './MeasuredDiv';
+var Connector = require('paths-js/connector');
+
+console.log('connector:', Connector)
 
 
 class RecipeGraph extends React.Component {
@@ -9,91 +12,128 @@ class RecipeGraph extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      bboxMap: {}
+      bbox: undefined
     };
     this.updateBBox = this.updateBBox.bind(this);
   }
 
-  updateBBox(bbox, index) {
-    const bboxMap = this.state.bboxMap;
-    bboxMap[index] = bbox;
-    this.setState({bboxMap: bboxMap});
+  updateBBox(bbox) {
+    this.setState({bbox: bbox});
   }
 
-
   render() {
+    const {
+      nodes,
+      windowSize,
+      isBold,
+      onMouseEnterNode,
+      onMouseLeaveNode
+    } = this.props;
+    const { bbox } = this.state;
+
+    let ingredientNodes = [];
+    let stepNodes = [];
+    for (const node of Object.values(nodes)) {
+      if (node.type === 'ingredient') {
+        ingredientNodes.push(node);
+      }
+      else if (node.type === 'step') {
+        stepNodes.push(node);
+      }
+    }
+
     // scale the spacing between nodes to fit the window width
-    const horizontalSpacing = bboxMap['svg'] ? bboxMap['svg'].width / (stepDivs.length + 1) : 10;
+    const verticalSpacing = bbox ? bbox.height / (stepNodes.length + 1) : 10;
+    const horizontalSpacing = bbox ? bbox.width / (ingredientNodes.length + 1) : 10;
+    const verticalOffset = 10;
+    const horizontalOffset = 10;
 
-    const boxIDToCoords = {};
-    let x_coord, y_coord;
-    // set coordinates for each ingredient node
-    let i = 0;
-    for (const key of ingredients) {
-      const boxID = idToBox[key];
-      if (!bboxMap[boxID]) {
-        continue;
-      }
-      x_coord = 10;
-      y_coord = (bboxMap[boxID].top - bboxMap['b0'].top +
-        (bboxMap[boxID].height / 2));
-
-      boxIDToCoords[boxID] = [x_coord, y_coord];
-      i = i + 1;
-    }
-
-    // set coordinates for each step node
-    x_coord = horizontalSpacing;
-    for (const key of steps) {
-      const boxID = idToBox[key];
-      if (!bboxMap[boxID]) {
-        continue;
-      }
-      y_coord = (bboxMap[boxID].top - bboxMap['b0'].top +
-        (bboxMap[boxID].height / 2));
-
-      boxIDToCoords[boxID] = [x_coord, y_coord];
-      x_coord += horizontalSpacing;
-      i = i + 1
-    }
+    let nodeCoords = {};
 
     // make a svg for each node
-    const nodes = Object.keys(boxIDToCoords).map(key => {
-      return (
-          <circle
-            fill="white"
-            stroke="black"
-            r="6"
-            cx={boxIDToCoords[key][0]}
-            cy={boxIDToCoords[key][1]} />
-        );
-    });
+    let circles = [];
+    let i = 0;
+    for (const ingredientNode of ingredientNodes) {
+
+      const xCoord = i * horizontalSpacing + horizontalOffset;
+      const yCoord = verticalOffset;
+      nodeCoords[ingredientNode.id] = {
+        xCoord: xCoord,
+        yCoord: yCoord
+      }
+
+      circles.push(
+        <circle
+          fill="white"
+          stroke="black"
+          r="6"
+          stroke-width={isBold[ingredientNode.id] ? 3 : 1}
+          cx={xCoord}
+          cy={yCoord}
+          onMouseEnter={() => onMouseEnterNode(ingredientNode.id)}
+          onMouseLeave={() => onMouseLeaveNode(ingredientNode.id)} />
+      );
+
+      i++;
+    }
+
+    i = 0;
+    for (const stepNode of stepNodes) {
+      console.log(stepNode);
+
+      const sumParentXCoords = stepNode.parents.reduce(
+        (acc, parent) => (acc + nodeCoords[parent].xCoord),
+        0
+      );
+
+      const xCoord = sumParentXCoords / stepNode.parents.length + horizontalOffset;
+      const yCoord = (i + 1) * verticalSpacing + verticalOffset;
+      nodeCoords[stepNode.id] = {
+        xCoord: xCoord,
+        yCoord: yCoord
+      }
+
+      circles.push(
+        <circle
+          fill="white"
+          stroke="black"
+          r="6"
+          stroke-width={isBold[stepNode.id] ? 3 : 1}
+          cx={xCoord}
+          cy={yCoord}
+          onMouseEnter={() => onMouseEnterNode(stepNode.id)}
+          onMouseLeave={() => onMouseLeaveNode(stepNode.id)} />
+      );
+
+      i++;
+    }
+
+    console.log('circles:', circles);
 
     // for each node, make a connector from it to each of its parents
     // accumulate all the connectors into a list
     let edges = [];
-    for (const step of steps) {
-      const box = idToBox[step];
+    for (const stepNode of stepNodes) {
 
-      const endCoord = boxIDToCoords[box];
-      const node = graph[step];
+      const endXCoord = nodeCoords[stepNode.id].xCoord;
+      const endYCoord = nodeCoords[stepNode.id].yCoord;
 
-      if (endCoord) {
-        for (const parent of node.parents) {
-          const startCoord = boxIDToCoords[idToBox[parent]];
-          const connector = Connector({
-            start: startCoord,
-            end: endCoord,
-            tension: 0.1
-          });
+      for (const parentID of stepNode.parents) {
+        const startXCoord = nodeCoords[parentID].xCoord;
+        const startYCoord =  nodeCoords[parentID].yCoord;
 
-          edges.push(
-            <path
-              d={ connector.path.print() }
-              fill="none"
-              stroke="gray" />
-          );
-        }
+        const connector = Connector({
+          start: [startXCoord, startYCoord],
+          end: [endXCoord, endYCoord],
+          tension: 0.1
+        });
+
+        edges.push(
+          <path
+            d={ connector.path.print() }
+            fill="none"
+            stroke="gray" />
+        );
       }
     }
 
@@ -102,7 +142,8 @@ class RecipeGraph extends React.Component {
         index="svg"
         content={
           <svg className="graph-svg">
-            {edges.concat(nodes)}
+            {edges}
+            {circles}
           </svg>
         }
         updateFunc={this.updateBBox}
