@@ -5,18 +5,19 @@ import spacy
 from bs4 import BeautifulSoup
 
 from recipedia.ingredient import Ingredient
-from recipedia.recipe2 import Recipe
+from recipedia.recipe import Recipe
 
 headers = {'User-Agent': 'Mozilla/5.0 (compatible)'}
+
+
 class RecipeParser:
 
     def __init__(self):
         """Instantiate NLP package and unit registry to use in Recipes"""
         print('Loading spacy package...')
-        self.nlp = spacy.load('en_core_web_md')
-        print('done. Loading pint unit registry...')
-        self.ureg = pint.UnitRegistry()
+        self.nlp = spacy.load('en_core_web_md')  # this takes a couple seconds
         print('done.')
+        self.ureg = pint.UnitRegistry()
 
 # ---- Whole recipe parsing ---------------------------------------------------
 
@@ -44,31 +45,40 @@ class RecipeParser:
         # going with if/else for now
         ingredient_tags, instruction_tags = None, None
         if domain == 'www.allrecipes.com':
-            ingredient_tags = soup.find_all('span', class_='ingredients-item-name')
-            instruction_tags = soup.find('ul', class_='instructions-section').find_all('p')
+            ingredient_tags = soup.find_all(
+                'span', class_='ingredients-item-name')
+            instruction_tags = soup.find(
+                'ul', class_='instructions-section').find_all('p')
         elif domain == 'www.foodnetwork.com':
             # first tag is 'select all' so remove it
-            ingredient_tags = soup.find_all('span', class_='o-Ingredients__a-Ingredient--CheckboxLabel')[1:]
+            ingredient_tags = soup.find_all(
+                'span', class_='o-Ingredients__a-Ingredient--CheckboxLabel')[1:]
             instruction_tags = soup.find_all('li', class_='o-Method__m-Step')
         elif domain == 'www.tasteofhome.com':
-            ingredient_tags = soup.find('ul', class_='recipe-ingredients__list').find_all('li')
-            instruction_tags = soup.find_all('li', class_='recipe-directions__item')
+            ingredient_tags = soup.find(
+                'ul', class_='recipe-ingredients__list').find_all('li')
+            instruction_tags = soup.find_all(
+                'li', class_='recipe-directions__item')
         elif domain == 'www.simplyrecipes.com':
             ingredient_tags = soup.find_all('li', class_='ingredient')
             instruction_tags = soup.find(class_='recipe-method').find_all('p')
         elif domain == 'www.thespruceeats.com':
             ingredient_tags = soup.find_all('li', class_='ingredient')
-            instruction_tags = soup.find(class_='comp section--instructions section').find_all('p', class_='comp mntl-sc-block mntl-sc-block-html')
+            instruction_tags = soup.find(class_='comp section--instructions section').find_all(
+                'p', class_='comp mntl-sc-block mntl-sc-block-html')
         elif domain == 'www.epicurious.com':
             ingredient_tags = soup.find_all('li', class_='ingredient')
             instruction_tags = soup.find_all('p', class_='preparation_step')
         elif domain == 'www.food.com':
-            ingredient_tags = soup.find_all('div', class_='recipe-ingredients__ingredient')
-            instruction_tags = soup.find_all('li', class_='recipe-directions__step')
+            ingredient_tags = soup.find_all(
+                'div', class_='recipe-ingredients__ingredient')
+            instruction_tags = soup.find_all(
+                'li', class_='recipe-directions__step')
 
         if ingredient_tags and instruction_tags:
             # make a list of Ingredient objects
-            ingredients = self.parse_ingredients([i.get_text().strip() for i in ingredient_tags])
+            ingredients = self.parse_ingredients(
+                [i.get_text().strip() for i in ingredient_tags])
             instructions_list = []
             # Make sure sentences are separated by a period to help spaCy out
             for i in instruction_tags:
@@ -113,7 +123,8 @@ class RecipeParser:
             Recipe object representation
         """
         ingredient_tags = soup.find_all('li', class_='wprm-recipe-ingredient')
-        instruction_tags = soup.find_all('div', class_='wprm-recipe-instruction-text')
+        instruction_tags = soup.find_all(
+            'div', class_='wprm-recipe-instruction-text')
 
         ingredients, instructions = [], []
         id_ = 0
@@ -123,11 +134,12 @@ class RecipeParser:
             name = tag.find('span', class_='wprm-recipe-ingredient-name')
             notes = tag.find('span', class_='wprm-recipe-ingredient-notes')
 
-            amount, unit, name, notes = [attr.get_text().lower() if attr else None for attr in [amount, unit, name, notes]]
-            print('amount, quantity', amount, unit)
-            quantity = self.ureg.Quantity(amount or 0, unit)
-            ingredients.append(self.parse_ingredient(f'{amount} {unit} {name} {notes}', id_))
-            # ingredients.append(Ingredient(quantity, name, id_, self.ureg, self.nlp))
+            not_none = filter(
+                lambda x: x is not None,
+                [amount, unit, name, notes])
+            text = ' '.join([attr.get_text().lower()for attr in not_none])
+            print('text:', text)
+            ingredients.append(self.parse_ingredient(text, id_))
             id_ += 1
 
         instructions = ' '.join([tag.get_text() for tag in instruction_tags])
@@ -135,9 +147,6 @@ class RecipeParser:
         r = Recipe(ingredients, instructions, self.ureg, self.nlp)
 
         return r
-
-
-
 
 # ---- Ingredient parsing -----------------------------------------------------
 
@@ -187,7 +196,6 @@ class RecipeParser:
             text = re.sub(f'\s?{char}', f' {replacement}', text)
         text = text.strip()
 
-
         # define some regular expressions to help identify numbers
         integer = '(\d+)'
         fraction = f'{integer}/{integer}'
@@ -200,8 +208,6 @@ class RecipeParser:
         word = '[a-zA-Z-\.]+'
         word = '\S+'
 
-
-
         number_parse = {
             integer: lambda match: float(match[1]),
             decimal: lambda match: float(match[1]),
@@ -210,10 +216,10 @@ class RecipeParser:
 
         }
 
-
         def match_number(pattern, text):
             for num_pattern in [mixed_fraction, fraction, decimal, integer]:
-                match = re.match(re.compile(pattern.format(num_pattern=num_pattern, word=word)), text)
+                match = re.match(re.compile(pattern.format(
+                    num_pattern=num_pattern, word=word)), text)
                 if match:
                     magnitude = number_parse[num_pattern](match)
                     try:  # try to parse the word as a unit
@@ -228,14 +234,14 @@ class RecipeParser:
 
         quantity_a, remainder_a = match_number(
             '{num_pattern} ?(?P<remainder>(?P<unit>{word}) ?(?P<tail>.*))',
-             text)
+            text)
         if not quantity_a:
             return Ingredient(self.ureg.Quantity(0), text, id_, self.ureg, self.nlp)
 
         # match against range format
         quantity_b, remainder_b = match_number(
             '(?:- ?|to ){num_pattern} ?(?P<remainder>(?P<unit>{word})(?P<tail>.*))',
-             remainder_a)
+            remainder_a)
         if quantity_b:
             # i want to know if this ever isn't dimensionless
             assert quantity_a.dimensionless
@@ -253,10 +259,9 @@ class RecipeParser:
         if quantity_c:
             # prefer measurements of mass; otherwise use the first measurement
             if (str(quantity_c.dimensionality) == '[mass]' and
-                str(quantity_a.dimensionality) != '[mass]'):
+                    str(quantity_a.dimensionality) != '[mass]'):
                 return Ingredient(quantity_c, remainder_c, id_, self.ureg, self.nlp)
             else:
                 return Ingredient(quantity_a, remainder_c, id_, self.ureg, self.nlp)
 
         return Ingredient(quantity_a, remainder_a, id_, self.ureg, self.nlp)
-

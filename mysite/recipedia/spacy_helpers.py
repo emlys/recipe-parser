@@ -38,39 +38,12 @@ def get_shallow_conjuncts(token: Token) -> list:
 def split_conjuncts(span: Span):
     # Get the first conjunct
     conjs = get_shallow_conjuncts(span.root)
-
-    if conjs:
-        conj = conjs[0]
-
-        # Split around the coordinating conjunction, if there is one
-        if conj.nbor(-1).dep_ == 'cc':
-            head = span.doc[span.start: conj.i - 1]
-        else:
-            head = span.doc[span.start: conj.i]
-
-        tail = span.doc[conj.i:]
-        print(span, ':', head, ':', tail)
-        return head, tail
-
-    else:
-        return span, None
-
-
-def split_conjuncts2(span: Span):
-    # Get the first conjunct
-    conjs = get_shallow_conjuncts(span.root)
-    print('conjs:', conjs)
-
     if conjs:
         tail_start = conjs[0].left_edge.i
         head_end = conjs[0].left_edge.i - 1
         # don't include coordinating conjunctions or punctuation
-        print('last token of head:',
-              span.doc[head_end], span.doc[head_end].is_punct, span.doc[head_end].tag_)
         while span.doc[head_end].is_punct or span.doc[head_end].tag_ == 'CC':
-            print
             head_end -= 1  # move one token to the left
-            print(span.doc[head_end])
 
         # doc indexing is [inclusive: exclusive]
         head = span.doc[span.start: head_end + 1]
