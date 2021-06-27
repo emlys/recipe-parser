@@ -29,11 +29,19 @@ html {
     margin: 1em;
 }
 
+.bottom2 {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    margin: 1em;
+}
+
 .recipe {
     display: flex;
     flex-direction: column;
     width: 45%;
-    height: 100%;
     margin-left: 1em;
 }
 
@@ -77,12 +85,23 @@ html {
 }
 
 .graph-div {
-    display: flex;
-    align-items: stretch;
+/*    display: flex;
+    align-items: stretch;*/
+    height: 1000px;
 }
 
 .graph-svg {
-    flex-grow: 10;
+    width: 100%;
+    height: 100%;
+
+}
+
+.graph-box {
+    background-color: #ffffff;
+    border: 2px solid;
+    border-radius: 10px;
+    text-align: center;
+    padding: 0.3em;
 }
 
 .step {

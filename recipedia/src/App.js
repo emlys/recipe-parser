@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter, Route, Link } from 'react-router-dom';
 import './index.css';
 
-import Recipe from './Recipe.js';
+import Recipe from './Recipe2.js';
 import About from './about.js';
 
 

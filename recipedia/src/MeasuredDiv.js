@@ -20,7 +20,8 @@ function MeasuredDiv(props) {
   } = props;
   const measuredRef = useCallback(node => {
     if (node !== null) {
-      updateFunc(node.getBoundingClientRect());
+      console.log('updateFunc', index)
+      updateFunc(index, node.getBoundingClientRect());
     }
   }, updateDeps);
 

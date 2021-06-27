@@ -121,12 +121,12 @@ class Recipe extends React.Component {
       }
     }
 
-    for (const key of Object.keys(graph)) {
-      for (let wordIndex = graph[key].start_index; wordIndex <= graph[key].end_index; wordIndex++) {
-        console.log('highlighting word', wordIndex)
-        wordHighlightColor[wordIndex] = 'rgba(220, 50, 183, 0.34)';
-      }
-    }
+    // for (const key of Object.keys(graph)) {
+    //   for (let wordIndex = graph[key].start_index; wordIndex <= graph[key].end_index; wordIndex++) {
+    //     console.log('highlighting word', wordIndex)
+    //     wordHighlightColor[wordIndex] = 'rgba(220, 50, 183, 0.34)';
+    //   }
+    // }
 
     // For every hovered word, if the word has an ingredient label,
     // make the corresponding ingredient be bold

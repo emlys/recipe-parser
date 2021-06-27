@@ -4,7 +4,36 @@ import React from 'react';
 import MeasuredDiv from './MeasuredDiv';
 var Connector = require('paths-js/connector');
 
-console.log('connector:', Connector)
+
+class Span extends React.Component {
+  render() {
+    const {
+      id,
+      text,
+      isBold,
+      isUnderlined,
+      isItalic,
+      highlightColor,
+      onMouseEnter,
+      onMouseLeave
+    } = this.props;
+
+    console.log('text:', text)
+    return (
+      <span
+        style={{
+          fontWeight: (isBold ? 'bold' : ''),
+          textDecoration: (isUnderlined ? 'underline' : ''),
+          fontStyle: (isItalic ? 'italic' : ''),
+          backgroundColor: highlightColor,
+          whiteSpace: 'pre'}}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}>
+          {text}
+      </span>
+    );
+  }
+}
 
 
 class RecipeGraph extends React.Component {

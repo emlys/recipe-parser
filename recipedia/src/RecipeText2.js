@@ -65,19 +65,19 @@ class RecipeText extends React.Component {
     for (let id = min; id <= max; id++) {
       let text = tokens[id];
 
-      // if the token isn't punctuation, add a space before it
-      if (!punctuation.includes(text)) {
+      // if the token isn't punctuation, and isn't the first token, add a space before it
+      if (!punctuation.includes(text) & id !== min) {
         const spaceID = parseInt(id) - 0.5;
         const space = (
           <Span
             id={spaceID}
             text={' '}
-            isBold={isBold[spaceID]}
-            isUnderlined={isUnderlined[spaceID]}
-            isItalic={isItalic[id]}
+            // isBold={isBold[spaceID]}
+            // isUnderlined={isUnderlined[spaceID]}
+            // isItalic={isItalic[id]}
             // highlightColor={highlightColor[spaceID]}
-            onMouseEnter={() => onMouseEnterWord(spaceID)}
-            onMouseLeave={() => onMouseLeaveWord(spaceID)}
+            // onMouseEnter={() => onMouseEnterWord(spaceID)}
+            // onMouseLeave={() => onMouseLeaveWord(spaceID)}
           />
         );
         words.push(space);
@@ -89,11 +89,11 @@ class RecipeText extends React.Component {
           id={parseInt(id)}
           text={text}
           isBold={isBold[id]}
-          isUnderlined={isUnderlined[id]}
-          isItalic={isItalic[id]}
-          highlightColor={highlightColor[id]}
-          onMouseEnter={() => onMouseEnterWord(id)}
-          onMouseLeave={() => onMouseLeaveWord(id)}
+          // isUnderlined={isUnderlined[id]}
+          // isItalic={isItalic[id]}
+          // highlightColor={highlightColor[id]}
+          // onMouseEnter={() => onMouseEnterWord(id)}
+          // onMouseLeave={() => onMouseLeaveWord(id)}
         />
       );
       words.push(word);
