@@ -9,89 +9,43 @@ import RecipeText from './RecipeText2';
 var Connector = require('paths-js/connector');
 
 
+function sliceObject(obj, start, end) {
+  const newObj = {};
+  for (let i = start; i <= end; i++) {
+    newObj[i] = obj[i];
+  }
+  return newObj;
+}
+
+
 class RecipeNode extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      bbox: {}
-    };
-    this.updateBBox = this.updateBBox.bind(this);
-
-  }
-
-  updateBBox(index, new_bbox) {
-    const bbox = this.state.bbox;
-    bbox[index] = new_bbox;
-    this.setState({bbox: bbox});
   }
 
   render() {
     const {
-      node,
-      fullText,
+      id,
+      content,
       xCoord,
       yCoord,
+      nodeIsBold,
       updateBBox,
       windowSize
     } = this.props;
 
-    let words = {};
-    for (let wordIndex = 0; wordIndex < fullText.length; wordIndex++) {
-      words[wordIndex] = {};
-    }
-
-    if (node.type === 'step') {
-      for (const nodeIdObj of node.node_ids) {
-        for (const tokenIndex of nodeIdObj.tokens) {
-          words[tokenIndex].compoundWords = nodeIdObj.node_id;
-
-          if (words[tokenIndex].ingredientIDs) {
-            words[tokenIndex].ingredientIDs.push(nodeIdObj.node_id);
-          } else {
-            words[tokenIndex].ingredientIDs = [nodeIdObj.node_id];
-          }
-        }
-      }
-      words[node.verb_index].isVerb = true;
-    }
-
-    if (node.type === 'step') {
-      const tokens = {};
-      for (let key = node.start_index; key <= node.end_index; key++) {
-        tokens[key] = fullText[key]
-      }
-      const isBold = {};
-      isBold[node.verb_index] = true;
-
-      return (
-        <foreignObject x={xCoord} y={yCoord} width="200" height="200">
-          <MeasuredDiv
-            xmlns="http://www.w3.org/1999/xhtml"
-            index={node.id}
-            content={
-              <RecipeText
-                tokens={tokens}
-                isBold={isBold} />
-            }
-            className="graph-box"
-            updateDeps={windowSize}
-            updateFunc={updateBBox} />
-        </foreignObject>
-      );
-    } else {
-      return (
-        <foreignObject x={xCoord} y={yCoord} width="100" height="100">
-          <MeasuredDiv
-            xmlns="http://www.w3.org/1999/xhtml"
-            index={node.id}
-            content={node.name}
-            className="graph-box"
-            updateDeps={windowSize}
-            updateFunc={updateBBox} />
-        </foreignObject>
-      );
-    }
+    return (
+      <foreignObject x={xCoord} y={yCoord} width="100" height="100">
+        <MeasuredDiv
+          xmlns="http://www.w3.org/1999/xhtml"
+          index={id}
+          content={content}
+          className={nodeIsBold ? "bold-graph-box" : "graph-box"}
+          updateDeps={windowSize}
+          updateFunc={updateBBox} />
+      </foreignObject>
+    );
   }
 }
 
@@ -101,9 +55,24 @@ class RecipeGraph extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      bboxes: {}
+      bboxes: {},
+      wordIsHovered: {}
     };
+    this.onMouseEnterWord = this.onMouseEnterWord.bind(this);
+    this.onMouseLeaveWord = this.onMouseLeaveWord.bind(this);
     this.updateBBox = this.updateBBox.bind(this);
+  }
+
+  onMouseEnterWord(key) {
+    const wordIsHovered = this.state.wordIsHovered;
+    wordIsHovered[key] = true;
+    this.setState({wordIsHovered: wordIsHovered});
+  }
+
+  onMouseLeaveWord(key) {
+    const wordIsHovered = this.state.wordIsHovered;
+    wordIsHovered[key] = false;
+    this.setState({wordIsHovered: wordIsHovered});
   }
 
   updateBBox(id, bbox) {
@@ -119,11 +88,87 @@ class RecipeGraph extends React.Component {
       nodes,
       fullText,
       windowSize,
-      isBold,
-      onMouseEnterNode,
-      onMouseLeaveNode
     } = this.props;
-    const { bboxes } = this.state;
+    const { bboxes, wordIsHovered } = this.state;
+    console.log('wordishovered:', wordIsHovered)
+
+
+
+
+    // this mapping will let us look up attributes by word id
+    let words = {};
+    for (let wordIndex = 0; wordIndex < fullText.length; wordIndex++) {
+      words[wordIndex] = {};
+    }
+
+    for (const key of Object.keys(nodes)) {
+      if (nodes[key].type === 'step') {
+        for (const nodeIdObj of nodes[key].node_ids) {
+          for (const tokenIndex of nodeIdObj.tokens) {
+            if (words[tokenIndex].compoundWords) {
+              nodeIdObj.tokens.forEach(id => words[tokenIndex].compoundWords.add(id))
+            } else {
+              words[tokenIndex].compoundWords = new Set(nodeIdObj.tokens);
+            }
+
+            // make a list of node IDs corresponding to each word
+            if (words[tokenIndex].nodeIDs) {
+              words[tokenIndex].nodeIDs.push(nodeIdObj.node_id);
+            } else {
+              words[tokenIndex].nodeIDs = [nodeIdObj.node_id];
+            }
+          }
+        }
+        words[nodes[key].verb_index].isVerb = true;
+
+      }
+    }
+
+    console.log('words:', words);
+    const wordIsBold = {};
+    const wordIsUnderlined = {};
+    const wordIsItalic = {};
+    const nodeIsBold = {};
+
+
+    for (const key of Object.keys(words)) {
+      // Make every word with a node label be italic
+      if (words[key] && words[key].nodeIDs) {
+        wordIsItalic[key] = true;
+      }
+      // Make every root verb be bold
+      if (words[key] && words[key].isVerb) {
+        wordIsBold[key] = true;
+      }
+    }
+
+    // For every hovered word, if the word has a node label,
+    // make the corresponding node be bold
+    for (const key of Object.keys(wordIsHovered)) {
+      if (wordIsHovered[key] === true && words[key] && words[key].nodeIDs) {
+        for (const nodeID of words[key].nodeIDs) {
+          nodeIsBold[nodeID] = true;
+        }
+
+        wordIsUnderlined[key] = true;
+        for (const compoundWordID of words[key].compoundWords) {
+          wordIsUnderlined[compoundWordID] = true;
+        }
+      }
+    }
+
+    // for (const key of Object.keys(nodeIsHovered)) {
+    //   // If a node is hovered, make its outline bold
+    //   if (nodeIsHovered[key] === true) {
+    //     nodeIsBold[key] = true;
+
+    //   }
+    // }
+
+
+
+
+
 
     let ingredientNodes = [];
     let stepNodes = [];
@@ -136,6 +181,8 @@ class RecipeGraph extends React.Component {
       }
     }
 
+
+
     // scale the spacing between nodes to fit the window width
     const verticalSpacing = 100 //bbox ? bbox.height / (stepNodes.length + 1) : 10;
     const horizontalSpacing = bboxes['svg'] ? bboxes['svg'].width / (ingredientNodes.length + 1) : 10;
@@ -147,6 +194,7 @@ class RecipeGraph extends React.Component {
     // make a svg for each node
     let circles = [];
     let i = 0;
+    console.log('nodeisbold:', nodeIsBold)
     for (const ingredientNode of ingredientNodes) {
 
       const xCoord = i * horizontalSpacing + horizontalOffset;
@@ -156,10 +204,12 @@ class RecipeGraph extends React.Component {
         yCoord: yCoord
       }
 
+      console.log('isbold:', nodeIsBold[ingredientNode.id])
       circles.push(
         <RecipeNode
-          node={ingredientNode}
-          fullText={fullText}
+          id={ingredientNode.id}
+          content={ingredientNode.name}
+          nodeIsBold={nodeIsBold[ingredientNode.id]}
           xCoord={xCoord}
           yCoord={yCoord}
           updateBBox={this.updateBBox}
@@ -168,7 +218,6 @@ class RecipeGraph extends React.Component {
       i++;
     }
 
-    i = 0;
     for (const stepNode of stepNodes) {
       console.log(stepNode);
 
@@ -188,24 +237,25 @@ class RecipeGraph extends React.Component {
         yCoord: yCoord
       }
 
-      const tokens = {};
-      for (let key = stepNode.start_index; key <= stepNode.end_index; key++) {
-        tokens[key] = fullText[key]
-      }
-      const isBold = {};
-      isBold[stepNode.verb_index] = true;
+      const content = (
+        <RecipeText
+          tokens={sliceObject(fullText, stepNode.start_index, stepNode.end_index)}
+          isBold={sliceObject(wordIsBold, stepNode.start_index, stepNode.end_index)}
+          isItalic={sliceObject(wordIsItalic, stepNode.start_index, stepNode.end_index)}
+          isUnderlined={sliceObject(wordIsUnderlined, stepNode.start_index, stepNode.end_index)}
+          onMouseEnterWord={this.onMouseEnterWord}
+          onMouseLeaveWord={this.onMouseLeaveWord} />);
 
       circles.push(
         <RecipeNode
-          node={stepNode}
-          fullText={fullText}
+          id={stepNode.id}
+          content={content}
+          nodeIsBold={nodeIsBold[stepNode.id]}
           xCoord={xCoord}
           yCoord={yCoord}
           updateBBox={this.updateBBox}
           windowSize={windowSize} />
       );
-
-      i++;
     }
 
 
@@ -264,161 +314,4 @@ class RecipeGraph extends React.Component {
 }
 
 
-class Recipe extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.testref = React.createRef();
-    this.state = {
-      bboxMap: {},
-      wordIsHovered: Object.keys(props.fullText).reduce((acc, key) => {
-        acc[key] = false;
-        return acc;
-      }, {}),
-      nodeIsHovered: Object.keys(props.graph).reduce((acc, key) => {
-        acc[key] = false;
-        return acc;
-      }, {}),
-    };
-
-    this.updateBBox = this.updateBBox.bind(this);
-    this.onMouseEnterWord = this.onMouseEnterWord.bind(this);
-    this.onMouseLeaveWord = this.onMouseLeaveWord.bind(this);
-    this.onMouseEnterNode = this.onMouseEnterNode.bind(this);
-    this.onMouseLeaveNode = this.onMouseLeaveNode.bind(this);
-  }
-
-  updateBBox(bbox, index) {
-    const bboxMap = this.state.bboxMap;
-    bboxMap[index] = bbox;
-    this.setState({bboxMap: bboxMap});
-  }
-
-  onMouseEnterWord(key) {
-    const wordIsHovered = this.state.wordIsHovered;
-    wordIsHovered[key] = true;
-    this.setState({wordIsHovered: wordIsHovered});
-  }
-
-  onMouseLeaveWord(key) {
-    const wordIsHovered = this.state.wordIsHovered;
-    wordIsHovered[key] = false;
-    this.setState({wordIsHovered: wordIsHovered});
-  }
-
-  onMouseEnterNode(key) {
-    const nodeIsHovered = this.state.nodeIsHovered;
-    nodeIsHovered[key] = true;
-    this.setState({nodeIsHovered: nodeIsHovered});
-  }
-
-  onMouseLeaveNode(key) {
-    const nodeIsHovered = this.state.nodeIsHovered;
-    nodeIsHovered[key] = false;
-    this.setState({nodeIsHovered: nodeIsHovered});
-  }
-
-  render() {
-    const {
-      graph,
-      fullText,
-      windowSize
-    } = this.props;
-
-    const {
-      bboxMap,
-      wordIsHovered,
-      nodeIsHovered
-    } = this.state;
-
-
-
-    let words = {};
-    for (let wordIndex = 0; wordIndex < fullText.length; wordIndex++) {
-      words[wordIndex] = {};
-    }
-
-    for (const key of Object.keys(graph)) {
-      if (graph[key].type === 'step') {
-        for (const nodeIdObj of graph[key].node_ids) {
-          for (const tokenIndex of nodeIdObj.tokens) {
-            words[tokenIndex].compoundWords = nodeIdObj.node_id;
-
-            if (words[tokenIndex].ingredientIDs) {
-              words[tokenIndex].ingredientIDs.push(nodeIdObj.node_id);
-            } else {
-              words[tokenIndex].ingredientIDs = [nodeIdObj.node_id];
-            }
-          }
-        }
-        words[graph[key].verb_index].isVerb = true;
-
-      }
-    }
-
-    console.log('words:', words);
-    let wordIsBold = {};
-    let wordIsUnderlined = {};
-    let wordIsItalic = {};
-    let wordHighlightColor = {};
-    let ingredientIsBold = {};
-    let nodeIsBold = {};
-
-    // Make every word with an ingredient label be bold
-    for (const key of Object.keys(words)) {
-      if (words[key] && words[key].ingredientIDs) {
-        wordIsBold[key] = true;
-      }
-      if (words[key] && words[key].isVerb) {
-        wordIsItalic[key] = true;
-      }
-    }
-
-    // For every hovered word, if the word has an ingredient label,
-    // make the corresponding ingredient be bold
-    for (const key of Object.keys(wordIsHovered)) {
-      if (wordIsHovered[key] === true && words[key] && words[key].ingredientIDs) {
-        for (const ingredientID of words[key].ingredientIDs) {
-          ingredientIsBold[ingredientID] = true;
-        }
-
-        wordIsUnderlined[key] = true;
-        for (const compoundWordID of words[key].compoundWords) {
-          wordIsUnderlined[compoundWordID] = true;
-        }
-      }
-    }
-
-    for (const key of Object.keys(nodeIsHovered)) {
-      // If a node is hovered, make its outline bold
-      if (nodeIsHovered[key] === true) {
-        nodeIsBold[key] = true;
-
-
-        for (let wordIndex = graph[key].start_index; wordIndex <= graph[key].end_index; wordIndex++) {
-          console.log('highlighting word', wordIndex)
-          wordHighlightColor[wordIndex] = 'rgba(220, 50, 183, 0.34)';
-        }
-      }
-    }
-
-
-    console.log('highlights:', wordHighlightColor)
-    return (
-      <React.Fragment>
-      <div className="bottom2">
-        <RecipeGraph
-          nodes={graph}
-          fullText={fullText}
-          isBold={nodeIsBold}
-          windowSize={windowSize}
-          onMouseEnterNode={this.onMouseEnterNode}
-          onMouseLeaveNode={this.onMouseLeaveNode} />
-      </div>
-      </React.Fragment>
-    );
-  }
-}
-
-
-export default Recipe;
+export default RecipeGraph;

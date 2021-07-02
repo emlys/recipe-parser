@@ -14,7 +14,6 @@ class Span extends React.Component {
       onMouseLeave
     } = this.props;
 
-    console.log('text:', text)
     return (
       <span
         style={{
@@ -89,11 +88,10 @@ class RecipeText extends React.Component {
           id={parseInt(id)}
           text={text}
           isBold={isBold[id]}
-          // isUnderlined={isUnderlined[id]}
-          // isItalic={isItalic[id]}
-          // highlightColor={highlightColor[id]}
-          // onMouseEnter={() => onMouseEnterWord(id)}
-          // onMouseLeave={() => onMouseLeaveWord(id)}
+          isUnderlined={isUnderlined[id]}
+          isItalic={isItalic[id]}
+          onMouseEnter={() => onMouseEnterWord(id)}
+          onMouseLeave={() => onMouseLeaveWord(id)}
         />
       );
       words.push(word);

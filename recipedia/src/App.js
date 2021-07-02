@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter, Route, Link } from 'react-router-dom';
 import './index.css';
 
-import Recipe from './Recipe2.js';
+import RecipeGraph from './Recipe2.js';
 import About from './about.js';
 
 
@@ -100,8 +100,8 @@ class Recipedia extends React.Component {
 
         if (this.state.graph) {
             recipe = (
-                <Recipe
-                    graph={this.state.graph || []}
+                <RecipeGraph
+                    nodes={this.state.graph || []}
                     windowSize={[this.state.width, this.state.height]}
                     fullText={this.state.fullText} />
             );

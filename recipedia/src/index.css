@@ -104,6 +104,14 @@ html {
     padding: 0.3em;
 }
 
+.bold-graph-box {
+    background-color: #ffffff;
+    border: 4px solid;
+    border-radius: 10px;
+    text-align: center;
+    padding: 0.3em;
+}
+
 .step {
     text-align: right;
     padding: 0.5em;
