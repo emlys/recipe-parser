@@ -1,57 +1,34 @@
-import pint
 import numpy as np
-import spacy
-from spacy import displacy
 
-from .node import Node
 from .step import Step
 from . import spacy_helpers as sh
 
 
-class Recipe:
+class RecipeParser:
 
-    def __init__(self, ingredients, instructions, ureg, nlp):
-        """
-        Represent a recipe as a tree storing its ingedients and instructions
-
-        Recipe is a directed graph of Nodes. The Recipe begins with one Node for
-        each ingredient and no edges. For each step in the instructions, a Node
-        is added as the child of the Node(s) being acted upon.
-
-        For instance, if the recipe says 'mix the cheddar and parmesan', a Node
-        is created that references the Ingredients that best match 'cheddar' and
-        'parmesan'. Edges point from the 'cheddar' Node and the 'parmesan' Node
-        to the new 'cheddar and parmesan' Node.
-
-        Parameters:
-            ingredients: list of Ingredient objects representing all recipe ingredients
-            instructions: string containing all the recipe instructions as sentences
-            ureg: pint.UnitRegistry object, must be shared among all Ingredients
-            nlp: spacy.Language object
-        """
-        self.ingredients = ingredients
-        self.instructions = instructions
+    def __init__(self, ureg, nlp):
         self.ureg = ureg
         self.nlp = nlp
 
+    def parse(self, ingredients, instructions, fulltext):
         # The graph is a list of nodes,
         # each one being the root of a different connected component.
         # It is updated as the graph grows and connects.
         # New Nodes may only be connected to Nodes that are in this list
         # at the time they are instantiated.
-        self.graph = []
+        graph = []
 
-        self.document = self.nlp(instructions)
+        document = self.nlp(instructions)
         # displacy.serve(self.document)
 
         node_id = len(ingredients)
         current_ref = None
-        for clause in self.yield_clauses(self.document):
+        for clause in self.yield_clauses(document):
             step = self.parse_step(clause, node_id, current_ref)
             if step is not None:
                 node_id += 1
                 current_ref = step
-                self.graph.append(step)
+                graph.append(step)
 
     def yield_clauses(self, doc):
         """Iterate through clauses in a document.
